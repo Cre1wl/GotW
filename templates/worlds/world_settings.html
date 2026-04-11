@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Настройки - {{ world.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header" style="background: linear-gradient(135deg, rgba(109, 40, 217, 0.3), rgba(45, 212, 191, 0.15)); border-bottom: 1px solid rgba(139, 92, 246, 0.3);">
+                    <h4 class="mb-0" style="color: #f1f5f9;">
+                        <i class="fas fa-cog" style="color: #c084fc;"></i> Настройки мира
+                    </h4>
+                    <p class="small mt-1" style="color: #94a3c6;">Редактирование информации о мире "{{ world.name }}"</p>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        {% if world.cover_image %}
+                            <div class="mb-4 text-center">
+                                <img src="{{ world.cover_image.url }}" alt="{{ world.name }}"
+                                     style="max-width: 100%; max-height: 250px; border-radius: 16px; border: 2px solid rgba(139, 92, 246, 0.3);">
+                            </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label class="form-label" style="color: #cbd5e6;">
+                                <i class="fas fa-tag"></i> Название мира
+                            </label>
+                            <input type="text" name="name" value="{{ world.name }}" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" style="color: #cbd5e6;">
+                                <i class="fas fa-align-left"></i> Описание
+                            </label>
+                            <textarea name="description" class="form-control" rows="5" required>{{ world.description }}</textarea>
+                            <div class="form-text text-muted small">Расскажите о мире, его истории и особенностях</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label" style="color: #cbd5e6;">
+                                <i class="fas fa-image"></i> Обложка
+                            </label>
+                            <input type="file" name="cover_image" class="form-control" accept="image/*">
+                            <div class="form-text text-muted small">Оставьте пустым, чтобы сохранить текущую обложку. Рекомендуемый размер: 1200x630px</div>
+                        </div>
+
+                        <hr style="border-color: rgba(139, 92, 246, 0.3);">
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Сохранить изменения
+                            </button>
+                            <a href="{% url 'worlds:world_detail' world.id %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Назад к миру
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Опасная зона для удаления мира -->
+            <div class="card shadow mt-4" style="border: 1px solid rgba(244, 114, 182, 0.5);">
+                <div class="card-header" style="background: rgba(244, 114, 182, 0.15); border-bottom: 1px solid rgba(244, 114, 182, 0.3);">
+                    <h5 class="mb-0" style="color: #f472b6;">
+                        <i class="fas fa-exclamation-triangle"></i> Опасная зона
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p style="color: #94a3c6;">Удаление мира приведет к безвозвратной потере всех данных, включая персонажей, локации и элементы.</p>
+                    <button type="button" class="btn" style="background: rgba(244, 114, 182, 0.2); border: 1px solid #f472b6; color: #f472b6; border-radius: 50px;" data-bs-toggle="modal" data-bs-target="#deleteWorldModal">
+                        <i class="fas fa-trash-alt"></i> Удалить мир
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления мира -->
+<div class="modal fade" id="deleteWorldModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle" style="color: #f472b6;"></i> Удаление мира
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить мир <strong style="color: #c084fc;">"{{ world.name }}"</strong>?</p>
+                <p class="small" style="color: #f472b6;">Это действие невозможно отменить. Все данные мира будут потеряны навсегда.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Отмена</button>
+                <form method="post" action="{% url 'worlds:world_delete' world.id %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn rounded-pill" style="background: rgba(244, 114, 182, 0.2); border: 1px solid #f472b6; color: #f472b6;">
+                        <i class="fas fa-trash-alt"></i> Да, удалить
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control, .form-select {
+        transition: all 0.2s ease;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #a78bfa;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+    }
+    hr {
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}

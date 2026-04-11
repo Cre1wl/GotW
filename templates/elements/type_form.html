@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - {{ world.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb" style="background: rgba(12, 16, 28, 0.6); padding: 0.75rem 1rem; border-radius: 50px;">
+            <li class="breadcrumb-item"><a href="{% url 'worlds:library' %}" style="color: #a78bfa;">Мои миры</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'worlds:world_detail' world.id %}" style="color: #a78bfa;">{{ world.name }}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'elements:type_list' world.id %}" style="color: #a78bfa;">Типы элементов</a></li>
+            <li class="breadcrumb-item active" style="color: #cbd5e6;">{{ title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow">
+                <div class="card-header" style="background: linear-gradient(135deg, rgba(109, 40, 217, 0.3), rgba(45, 212, 191, 0.15)); border-bottom: 1px solid rgba(139, 92, 246, 0.3);">
+                    <h4 class="mb-0" style="color: #f1f5f9;">
+                        <i class="fas fa-{% if element_type %}edit{% else %}plus{% endif %}" style="color: #c084fc;"></i>
+                        {{ title }}
+                    </h4>
+                    <p class="small mt-1" style="color: #94a3c6;">Настройте тип элементов и их поля</p>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="id_name" class="form-label" style="color: #cbd5e6;">Название типа <span class="text-danger">*</span></label>
+                                    {{ form.name }}
+                                    <div class="form-text text-muted small">Например: Персонаж, Локация, Предмет, Событие</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="id_color" class="form-label" style="color: #cbd5e6;">Цвет</label>
+                                    {{ form.color }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_description" class="form-label" style="color: #cbd5e6;">Описание</label>
+                            {{ form.description }}
+                            <div class="form-text text-muted small">Краткое описание этого типа элементов</div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_icon" class="form-label" style="color: #cbd5e6;">Иконка</label>
+                                {{ form.icon }}
+                                <div class="form-text text-muted small">Font Awesome иконка (user, map, box, dragon, star)</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_fields_schema" class="form-label" style="color: #cbd5e6;">Схема полей (JSON)</label>
+                            {{ form.fields_schema }}
+                            <div class="form-text text-muted small mt-2">
+                                <strong style="color: #c4b5fd;">Пример:</strong>
+                                <pre class="mt-2 p-3 rounded" style="background: #0b0e1a; color: #a78bfa; font-size: 12px; border: 1px solid rgba(139, 92, 246, 0.3);">
+{
+  "name": {"type": "text", "required": true, "label": "Имя"},
+  "age": {"type": "number", "label": "Возраст"},
+  "bio": {"type": "textarea", "label": "Биография"},
+  "is_alive": {"type": "boolean", "label": "Жив", "default": true}
+}</pre>
+                                <strong style="color: #c4b5fd;">Доступные типы полей:</strong>
+                                text, textarea, number, boolean, date, datetime, time, color, select, multiselect, image, url, email, phone
+                            </div>
+                        </div>
+
+                        <hr style="border-color: rgba(139, 92, 246, 0.3);">
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% if element_type %}{% url 'elements:type_detail' world.id element_type.id %}{% else %}{% url 'elements:type_list' world.id %}{% endif %}" class="btn btn-secondary rounded-pill">
+                                <i class="fas fa-times"></i> Отмена
+                            </a>
+                            <button type="submit" class="btn btn-primary rounded-pill">
+                                <i class="fas fa-save"></i> Сохранить
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

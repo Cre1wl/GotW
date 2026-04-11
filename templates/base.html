@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Guardian of the Worlds{% endblock %}</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-dark: #070b17;
+            --bg-card: rgba(18, 25, 45, 0.85);
+            --bg-darker: #030614;
+            --primary: #6d28d9;
+            --primary-glow: #8b5cf6;
+            --secondary: #2dd4bf;
+            --accent: #a855f7;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e6;
+            --text-muted: #94a3c6;
+            --border: rgba(109, 40, 217, 0.35);
+            --glass-bg: rgba(10, 14, 23, 0.75);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0e1c;
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Основной градиентный фон */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, rgba(109, 40, 217, 0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 70%, rgba(45, 212, 191, 0.08) 0%, transparent 55%),
+                        radial-gradient(circle at 40% 90%, rgba(139, 92, 246, 0.1) 0%, transparent 40%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Анимированные звёзды */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0;
+            animation: twinkle 3s ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.2); }
+        }
+
+        /* Парящие частицы */
+        .particle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.4;
+        }
+
+        .particle-1 {
+            animation: float1 20s ease-in-out infinite;
+        }
+
+        .particle-2 {
+            animation: float2 25s ease-in-out infinite;
+        }
+
+        .particle-3 {
+            animation: float3 18s ease-in-out infinite;
+        }
+
+        @keyframes float1 {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, -50px) rotate(120deg); }
+            66% { transform: translate(-20px, 30px) rotate(240deg); }
+        }
+
+        @keyframes float2 {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(-40px, -30px) rotate(-120deg); }
+            66% { transform: translate(25px, 40px) rotate(-240deg); }
+        }
+
+        @keyframes float3 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(50px, -20px) scale(1.2); }
+        }
+
+        /* Геометрический узор */
+        .geometry {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.05;
+        }
+
+        .geometry svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Светящаяся линия вверху */
+        .glow-line {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #c084fc, #2dd4bf, #c084fc, transparent);
+            animation: slideGlow 4s ease-in-out infinite;
+            z-index: 100;
+        }
+
+        @keyframes slideGlow {
+            0% { transform: translateX(-100%); opacity: 0; }
+            50% { transform: translateX(0); opacity: 1; }
+            100% { transform: translateX(100%); opacity: 0; }
+        }
+
+        /* Навигация */
+        .navbar {
+            background: rgba(5, 8, 18, 0.92);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border);
+            padding: 0.9rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-brand {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #c084fc 0%, #5eead4 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent !important;
+            letter-spacing: 1px;
+        }
+
+        .navbar-brand i {
+            background: linear-gradient(135deg, #d8b4fe, #5eead4);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-right: 8px;
+        }
+
+        .nav-link {
+            color: #cbd5e6 !important;
+            font-weight: 500;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .nav-link:hover {
+            color: #e2e8ff !important;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #a78bfa, #5eead4);
+            transition: width 0.3s;
+        }
+
+        .nav-link:hover::after {
+            width: 70%;
+        }
+
+        /* Кнопки */
+        .btn-primary {
+            background: linear-gradient(105deg, #6d28d9, #3b0764);
+            border: none;
+            padding: 0.6rem 1.8rem;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s;
+            color: white;
+            box-shadow: 0 4px 12px rgba(109, 40, 217, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            background: linear-gradient(105deg, #7c3aed, #4c1d95);
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.5);
+            color: white;
+        }
+
+        .btn-outline-primary {
+            border: 1.5px solid #a78bfa;
+            color: #e2e8ff;
+            background: rgba(0,0,0,0.3);
+            border-radius: 50px;
+            padding: 0.5rem 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .btn-outline-primary:hover {
+            background: rgba(109, 40, 217, 0.35);
+            border-color: #c4b5fd;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid #475569;
+            color: #e2e8f0;
+            border-radius: 50px;
+            padding: 0.6rem 1.8rem;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background: #1e293b;
+            color: white;
+            border-color: #94a3b8;
+        }
+
+        /* Карточки */
+        .card {
+            background: rgba(12, 16, 28, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(109, 40, 217, 0.4);
+            border-radius: 24px;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-6px);
+            border-color: #c084fc;
+            box-shadow: 0 25px 40px -12px rgba(109, 40, 217, 0.3);
+        }
+
+        .card-header {
+            background: rgba(109, 40, 217, 0.25);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .card-title {
+            color: #f8fafc;
+            font-weight: 600;
+        }
+
+        .card-text {
+            color: var(--text-secondary);
+        }
+
+        /* Формы */
+        .form-control, .form-select {
+            background: #0b0e1a;
+            border: 1px solid #334155;
+            color: #f1f5f9;
+            border-radius: 16px;
+            padding: 0.7rem 1rem;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus, .form-select:focus {
+            background: #0f1222;
+            border-color: #a78bfa;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.35);
+            color: white;
+        }
+
+        .form-label {
+            color: #cbd5e6;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Аватар */
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #c084fc;
+            transition: transform 0.2s;
+        }
+
+        /* Dropdown */
+        .dropdown {
+            position: relative;
+            z-index: 10000;
+        }
+
+        .dropdown-toggle {
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dropdown-toggle::after {
+            display: none !important;
+        }
+
+        .dropdown-menu {
+            position: absolute !important;
+            top: 100% !important;
+            right: 0 !important;
+            left: auto !important;
+            transform: translateY(8px) !important;
+            min-width: 220px;
+            background: linear-gradient(135deg, #0f1225, #0a0d1c) !important;
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(139, 92, 246, 0.4) !important;
+            border-radius: 20px !important;
+            padding: 8px 0 !important;
+            margin: 0 !important;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(139, 92, 246, 0.2) !important;
+            z-index: 99999 !important;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .dropdown-menu.show {
+            display: block !important;
+            opacity: 1 !important;
+            transform: translateY(8px) !important;
+        }
+
+        .dropdown-item {
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+            padding: 10px 20px !important;
+            color: #e0e7ff !important;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            background: transparent !important;
+            border-radius: 0 !important;
+            margin: 0 !important;
+        }
+
+        .dropdown-item i {
+            width: 20px;
+            font-size: 1rem;
+            color: #a78bfa;
+            transition: all 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: linear-gradient(90deg, rgba(109, 40, 217, 0.4), rgba(45, 212, 191, 0.2)) !important;
+            color: white !important;
+            padding-left: 24px !important;
+        }
+
+        .dropdown-item:hover i {
+            color: #c4b5fd;
+            transform: scale(1.1);
+        }
+
+        .dropdown-item.text-danger {
+            color: #f472b6 !important;
+        }
+
+        .dropdown-item.text-danger:hover {
+            background: linear-gradient(90deg, rgba(244, 114, 182, 0.3), rgba(139, 92, 246, 0.1)) !important;
+            color: #f9a8d4 !important;
+        }
+
+        .dropdown-item.text-danger:hover i {
+            color: #f472b6;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            margin: 8px 0;
+            background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.5), transparent);
+        }
+
+        .dropdown-header {
+            padding: 8px 20px;
+            color: #a78bfa;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Футер */
+        .footer {
+            background: #03050bcc;
+            backdrop-filter: blur(8px);
+            border-top: 1px solid var(--border);
+            padding: 3rem 0 1.5rem;
+            margin-top: auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .footer a {
+            color: #a5b4fc;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+
+        .footer a:hover {
+            color: #c4b5fd;
+        }
+
+        .footer h5 {
+            color: #e2e8ff;
+            font-weight: 600;
+        }
+
+        /* Модальные окна - ОТКЛЮЧАЕМ BACKDROP */
+        .modal-backdrop {
+            display: none !important;
+        }
+
+        .modal {
+            background-color: transparent !important;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #0f1225, #0a0d1c);
+            border: 1px solid rgba(139, 92, 246, 0.5);
+            border-radius: 28px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 2000px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, rgba(109, 40, 217, 0.3), rgba(45, 212, 191, 0.15));
+            border-bottom: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 28px 28px 0 0;
+            padding: 1.2rem 1.8rem;
+        }
+
+        .modal-header .modal-title {
+            color: #f1f5f9;
+            font-weight: 600;
+            font-size: 1.4rem;
+        }
+
+        .modal-header .modal-title i {
+            color: #c084fc;
+            margin-right: 10px;
+        }
+
+        .modal-header .btn-close {
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            opacity: 0.8;
+            transition: all 0.2s;
+        }
+
+        .modal-header .btn-close:hover {
+            background: rgba(255,255,255,0.3);
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .modal-body {
+            padding: 2rem 1.8rem;
+        }
+
+        .modal-body h6 {
+            color: #c4b5fd;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+        }
+
+        .modal-body p, .modal-body li {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .modal-footer {
+            border-top: 1px solid rgba(139, 92, 246, 0.2);
+            padding: 1rem 1.8rem 1.5rem;
+            background: transparent;
+        }
+
+        .modal .btn-secondary {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid #475569;
+            color: #e2e8f0;
+            border-radius: 40px;
+            padding: 0.5rem 1.5rem;
+            transition: all 0.2s;
+        }
+
+        .modal .btn-secondary:hover {
+            background: #334155;
+            border-color: #94a3b8;
+            color: white;
+        }
+
+        .modal .btn-primary {
+            background: linear-gradient(105deg, #6d28d9, #3b0764);
+            border-radius: 40px;
+            padding: 0.5rem 1.8rem;
+        }
+
+        /* Герой секция */
+        .hero-section {
+            background: linear-gradient(125deg, rgba(109, 40, 217, 0.25), rgba(45, 212, 191, 0.12));
+            border: 1px solid rgba(139, 92, 246, 0.5);
+            border-radius: 32px;
+            padding: 3rem;
+            margin-bottom: 2.5rem;
+            backdrop-filter: blur(4px);
+        }
+
+        /* Анимация */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(25px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.55s ease-out forwards;
+        }
+
+        /* Скролл */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0e1a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(145deg, #6d28d9, #2dd4bf);
+            border-radius: 12px;
+        }
+
+        /* Таблицы */
+        .table {
+            color: var(--text-primary);
+        }
+        .table td, .table th {
+            border-color: #2d2a4a;
+        }
+
+        /* Бейджи */
+        .badge {
+            padding: 0.35rem 0.9rem;
+            border-radius: 40px;
+            font-weight: 500;
+            background: rgba(109, 40, 217, 0.4);
+            color: #ede9fe;
+        }
+
+        /* Алерты */
+        .alert {
+            border: none;
+            border-radius: 20px;
+            background: #0f1225e6;
+            backdrop-filter: blur(4px);
+            color: #f1f5f9;
+            border-left: 5px solid;
+        }
+        .alert-success { border-left-color: #2dd4bf; background: #0a1428e6; }
+        .alert-danger { border-left-color: #f472b6; background: #1e1025e6; }
+        .alert-warning { border-left-color: #fbbf24; background: #1c1b1ae6; }
+        .alert-info { border-left-color: #818cf8; background: #0e1127e6; }
+
+        /* Пагинация */
+        .page-link {
+            background: #0b0e1c;
+            border-color: #2d2f4a;
+            color: #cbd5e6;
+            border-radius: 14px;
+            margin: 0 4px;
+        }
+        .page-item.active .page-link {
+            background: linear-gradient(135deg, #6d28d9, #4c1d95);
+            border-color: #c084fc;
+            color: white;
+        }
+        .page-link:hover {
+            background: #1e1f3a;
+            color: #f1f5f9;
+            border-color: #a78bfa;
+        }
+
+        /* Общие текстовые стили */
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
+        .text-secondary {
+            color: var(--text-secondary) !important;
+        }
+        p, span, li, .form-text {
+            color: var(--text-secondary);
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--text-primary);
+        }
+
+        body.modal-open {
+            overflow: hidden !important;
+            padding-right: 0 !important;
+        }
+
+        /* Контент поверх фона */
+        .main-content, .navbar, .footer {
+            position: relative;
+            z-index: 1;
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="glow-line"></div>
+
+    <div class="stars" id="starsContainer"></div>
+
+    <div class="particle particle-1" style="position: fixed; bottom: 10%; left: 5%; font-size: 40px; opacity: 0.15;">✦</div>
+    <div class="particle particle-2" style="position: fixed; top: 20%; right: 8%; font-size: 30px; opacity: 0.12;">◇</div>
+    <div class="particle particle-3" style="position: fixed; bottom: 30%; right: 15%; font-size: 25px; opacity: 0.1;">✧</div>
+    <div class="particle particle-1" style="position: fixed; top: 60%; left: 12%; font-size: 20px; opacity: 0.08;">⬟</div>
+    <div class="particle particle-2" style="position: fixed; top: 40%; left: 20%; font-size: 35px; opacity: 0.1;">✦</div>
+    <div class="particle particle-3" style="position: fixed; bottom: 50%; right: 25%; font-size: 28px; opacity: 0.09;">◇</div>
+
+    <!-- НАВИГАЦИЯ -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'core:home' %}">
+                <i class="fas fa-dragon"></i>
+                Guardian of the Worlds
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'core:home' %}">
+                            <i class="fas fa-home"></i> Главная
+                        </a>
+                    </li>
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'worlds:library' %}">
+                                <i class="fas fa-globe"></i> Мои миры
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'relationships:relationship_graph' %}">
+                                <i class="fas fa-project-diagram"></i> Связи
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+                <div class="d-flex">
+                    {% if user.is_authenticated %}
+                        <div class="dropdown">
+                            <div class="d-flex align-items-center" data-bs-toggle="dropdown" aria-expanded="false" role="button" style="cursor: pointer;">
+                                {% if user.avatar %}
+                                    <img src="{{ user.avatar.url }}" alt="{{ user.username }}" class="user-avatar">
+                                {% else %}
+                                    <div class="user-avatar d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #6d28d9, #2dd4bf);">
+                                        <i class="fas fa-user text-white"></i>
+                                    </div>
+                                {% endif %}
+                                <span class="ms-2 d-none d-md-inline">{{ user.get_full_name|default:user.username }}</span>
+                                <i class="fas fa-chevron-down ms-1 text-muted small"></i>
+                            </div>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{% url 'users:profile' %}"><i class="fas fa-user-circle"></i> Профиль</a></li>
+                                <li><a class="dropdown-item" href="{% url 'users:profile_edit' %}"><i class="fas fa-edit"></i> Редактировать</a></li>
+                                <li><a class="dropdown-item" href="{% url 'users:password_change' %}"><i class="fas fa-key"></i> Сменить пароль</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="{% url 'users:logout' %}"><i class="fas fa-sign-out-alt"></i> Выйти</a></li>
+                            </ul>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'users:login' %}" class="btn btn-outline-primary me-2">Войти</a>
+                        <a href="{% url 'users:register' %}" class="btn btn-primary">Регистрация</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Сообщения -->
+    {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show fade-in-up" role="alert">
+                    <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Основной контент -->
+    <main class="main-content">
+        <div class="container py-4 fade-in-up">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </main>
+
+    <!-- Футер -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5><i class="fas fa-dragon"></i> Guardian of the Worlds</h5>
+                    <p class="text-secondary small">Создавайте уникальные вселенные, управляйте мирами и развивайте истории вместе с GotW.</p>
+                    <p class="text-secondary small mb-0">© 2026 Guardian of the Worlds. Все права защищены.</p>
+                </div>
+                <div class="col-md-2 mb-4 mb-md-0">
+                    <h5>Навигация</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{% url 'core:home' %}">Главная</a></li>
+                        {% if user.is_authenticated %}
+                            <li><a href="{% url 'worlds:library' %}">Мои миры</a></li>
+                            <li><a href="{% url 'relationships:relationship_graph' %}">Связи</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="col-md-3 mb-4 mb-md-0">
+                    <h5>Помощь</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#" data-bs-toggle="modal" data-bs-target="#faqModal">FAQ</a></li>
+                        <li><a href="#" data-bs-toggle="modal" data-bs-target="#docsModal">Документация</a></li>
+                        <li><a href="#" data-bs-toggle="modal" data-bs-target="#supportModal">Поддержка</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>Социальные сети</h5>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="text-secondary"><i class="fab fa-github fa-lg"></i></a>
+                        <a href="#" class="text-secondary"><i class="fab fa-twitter fa-lg"></i></a>
+                        <a href="#" class="text-secondary"><i class="fab fa-discord fa-lg"></i></a>
+                        <a href="#" class="text-secondary"><i class="fab fa-telegram fa-lg"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Модальные окна футера -->
+    <div class="modal fade" id="faqModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-question-circle"></i> Часто задаваемые вопросы</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <h6><i class="fas fa-globe me-2" style="color: #a78bfa;"></i> Что такое Guardian of the Worlds?</h6>
+                        <p class="text-secondary ms-4">Это платформа для создания и управления вашими собственными мирами, персонажами и историями.</p>
+                    </div>
+                    <div class="mb-4">
+                        <h6><i class="fas fa-plus-circle me-2" style="color: #a78bfa;"></i> Как создать мир?</h6>
+                        <p class="text-secondary ms-4">Перейдите в раздел "Мои миры" и нажмите кнопку "Создать мир".</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="docsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-book-open"></i> Документация</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-secondary">Документация в разработке.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="supportModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-headset"></i> Поддержка</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-secondary mb-3">Мы всегда рады помочь вам!</p>
+                    <ul class="text-secondary" style="list-style: none; padding-left: 0;">
+                        <li class="mb-3"><i class="fas fa-envelope me-3" style="color: #a78bfa;"></i> Email: support@guardianworlds.com</li>
+                        <li class="mb-3"><i class="fab fa-telegram me-3" style="color: #a78bfa;"></i> Telegram: @guardian_worlds</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Понятно</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Создание звёзд
+        function createStars() {
+            const starsContainer = document.getElementById('starsContainer');
+            if (!starsContainer) return;
+
+            const starCount = 150;
+            starsContainer.innerHTML = '';
+
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                const size = Math.random() * 3 + 1;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                star.style.animationDuration = Math.random() * 3 + 2 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+
+        createStars();
+
+        // Авто-закрытие алертов через 5 секунд
+        setTimeout(() => {
+            document.querySelectorAll('.alert').forEach(alert => {
+                new bootstrap.Alert(alert).close();
+            });
+        }, 5000);
+    });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Удаление элемента{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow" style="border: 1px solid rgba(244, 114, 182, 0.5);">
+                <div class="card-header" style="background: rgba(244, 114, 182, 0.15); border-bottom: 1px solid rgba(244, 114, 182, 0.3);">
+                    <h4 class="mb-0" style="color: #f472b6;">
+                        <i class="fas fa-exclamation-triangle"></i> Удаление элемента
+                    </h4>
+                </div>
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-exclamation-triangle fa-4x mb-3" style="color: #f472b6;"></i>
+                    <h5 style="color: #f1f5f9;">Вы уверены, что хотите удалить элемент <strong style="color: #c084fc;">"{{ element.name }}"</strong>?</h5>
+                    <p class="mb-4" style="color: #94a3c6;">Это действие невозможно отменить.</p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn rounded-pill" style="background: rgba(244, 114, 182, 0.2); border: 1px solid #f472b6; color: #f472b6;">
+                                <i class="fas fa-trash-alt"></i> Да, удалить
+                            </button>
+                            <a href="{% url 'elements:element_detail' world.id element.id %}" class="btn btn-secondary rounded-pill">
+                                <i class="fas fa-times"></i> Отмена
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

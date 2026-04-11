@@ -1,0 +1,22 @@
+<!-- Модальное окно для просмотра галереи -->
+<div class="modal fade modal-gallery" id="galleryViewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content" style="background: rgba(8, 10, 20, 0.98); backdrop-filter: blur(20px);">
+            <div class="modal-header border-0">
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center position-relative">
+                <button class="gallery-nav-btn gallery-prev" id="galleryPrevBtn">
+                    <i class="fas fa-chevron-left fa-2x"></i>
+                </button>
+                <img id="galleryModalImage" src="" alt="" class="gallery-modal-img">
+                <button class="gallery-nav-btn gallery-next" id="galleryNextBtn">
+                    <i class="fas fa-chevron-right fa-2x"></i>
+                </button>
+                <div class="mt-3">
+                    <span id="galleryCounter" class="text-secondary"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

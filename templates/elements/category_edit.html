@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Редактирование категории - {{ category.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb" style="background: rgba(12, 16, 28, 0.6); padding: 0.75rem 1rem; border-radius: 50px;">
+            <li class="breadcrumb-item"><a href="{% url 'worlds:library' %}" style="color: #a78bfa;">Мои миры</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'worlds:world_detail' world.id %}" style="color: #a78bfa;">{{ world.name }}</a></li>
+            <li class="breadcrumb-item active" style="color: #cbd5e6;">{{ category.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header" style="background: linear-gradient(135deg, rgba(109, 40, 217, 0.3), rgba(45, 212, 191, 0.15)); border-bottom: 1px solid rgba(139, 92, 246, 0.3);">
+                    <h5 class="mb-0" style="color: #f1f5f9;"><i class="fas fa-info-circle"></i> Информация о категории</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label" style="color: #cbd5e6;">Название категории</label>
+                            <input type="text" name="name" value="{{ category.name }}" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" style="color: #cbd5e6;">Иконка (Font Awesome)</label>
+                            <input type="text" name="icon" value="{{ category.icon }}" class="form-control" placeholder="cube">
+                            <div class="form-text text-muted small">Например: user, map, box, heart, star</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 rounded-pill">
+                            <i class="fas fa-save"></i> Сохранить
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header" style="background: linear-gradient(135deg, rgba(45, 212, 191, 0.2), rgba(109, 40, 217, 0.1)); border-bottom: 1px solid rgba(45, 212, 191, 0.3);">
+                    <h5 class="mb-0" style="color: #5eead4;"><i class="fas fa-plus"></i> Добавить поле</h5>
+                </div>
+                <div class="card-body">
+                    <form id="addFieldForm">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-5">
+                                <input type="text" id="fieldLabel" class="form-control" placeholder="Название поля" required>
+                            </div>
+                            <div class="col-md-4">
+                                <select id="fieldType" class="form-select">
+                                    <option value="text">Текст</option>
+                                    <option value="textarea">Большой текст</option>
+                                    <option value="number">Число</option>
+                                    <option value="boolean">Да/Нет</option>
+                                    <option value="date">Дата</option>
+                                    <option value="datetime">Дата и время</option>
+                                    <option value="color">Цвет</option>
+                                    <option value="image">Изображение</option>
+                                    <option value="url">Ссылка</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="button" class="btn btn-primary w-100 rounded-pill" onclick="addField()">
+                                    <i class="fas fa-plus"></i> Добавить
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header" style="background: rgba(109, 40, 217, 0.2); border-bottom: 1px solid rgba(139, 92, 246, 0.3);">
+                    <h5 class="mb-0" style="color: #c4b5fd;"><i class="fas fa-list"></i> Поля категории</h5>
+                </div>
+                <div class="card-body">
+                    <div id="fieldsList">
+                        {% for field in fields %}
+                            <div class="field-item d-flex justify-content-between align-items-center p-3 mb-2 rounded" data-field-id="{{ field.id }}" style="background: rgba(12, 16, 28, 0.6); border: 1px solid rgba(139, 92, 246, 0.2);">
+                                <div>
+                                    <strong style="color: #f1f5f9;">{{ field.label }}</strong>
+                                    <span class="badge ms-2" style="background: rgba(109, 40, 217, 0.3); color: #c4b5fd;">{{ field.get_field_type_display }}</span>
+                                    {% if field.is_required %}
+                                        <span class="badge ms-1" style="background: rgba(244, 114, 182, 0.2); color: #f472b6;">Обязательное</span>
+                                    {% endif %}
+                                </div>
+                                <button class="btn btn-sm" onclick="removeField({{ field.id }})" style="background: rgba(244, 114, 182, 0.2); border: 1px solid #f472b6; color: #f472b6;">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        {% empty %}
+                            <p class="text-center py-4" style="color: #94a3c6;">Нет полей. Добавьте первое поле!</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function addField() {
+    const label = document.getElementById('fieldLabel').value;
+    const fieldType = document.getElementById('fieldType').value;
+
+    if (!label) {
+        alert('Введите название поля');
+        return;
+    }
+
+    fetch('{% url "elements:add_field" world.id category.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: `label=${encodeURIComponent(label)}&field_type=${fieldType}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Ошибка при добавлении поля');
+        }
+    });
+}
+
+function removeField(fieldId) {
+    if (confirm('Удалить поле?')) {
+        fetch(`/elements/fields/${fieldId}/remove/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+</script>
+
+<style>
+    .field-item:hover {
+        background: rgba(109, 40, 217, 0.2) !important;
+        border-color: #a78bfa !important;
+        transform: translateX(5px);
+        transition: all 0.2s;
+    }
+</style>
+{% endblock %}

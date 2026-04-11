@@ -1,0 +1,421 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load element_filters %}
+
+{% block title %}Список связей - {{ world.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb" style="background: rgba(12, 16, 28, 0.6); padding: 0.75rem 1.25rem; border-radius: 50px; backdrop-filter: blur(8px);">
+            <li class="breadcrumb-item"><a href="{% url 'worlds:library' %}" style="color: #a78bfa; text-decoration: none;">Мои миры</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'worlds:world_detail' world.id %}" style="color: #a78bfa; text-decoration: none;">{{ world.name }}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'relationships:relationship_graph_detail' world.id %}" style="color: #a78bfa; text-decoration: none;">Граф связей</a></li>
+            <li class="breadcrumb-item active" style="color: #94a3c6;">Список связей</li>
+        </ol>
+    </nav>
+
+    <!-- Заголовок -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <div style="width: 45px; height: 45px; background: linear-gradient(135deg, rgba(109, 40, 217, 0.3), rgba(45, 212, 191, 0.2)); border-radius: 14px; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-list fa-lg" style="color: #5eead4;"></i>
+            </div>
+            <div>
+                <h1 class="display-5 fw-bold mb-0" style="background: linear-gradient(125deg, #c4b5fd, #5eead4); -webkit-background-clip: text; background-clip: text; color: transparent;">
+                    Список связей
+                </h1>
+                <p class="text-secondary mb-0" style="font-size: 0.95rem;">{{ world.name }}</p>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'relationships:relationship_graph_detail' world.id %}" class="btn btn-outline-secondary rounded-pill">
+                <i class="fas fa-project-diagram"></i> Граф
+            </a>
+            <a href="{% url 'relationships:relationship_create' world.id %}" class="btn btn-primary rounded-pill">
+                <i class="fas fa-plus"></i> Создать связь
+            </a>
+        </div>
+    </div>
+
+    <!-- Фильтры -->
+    <div class="filter-bar mb-4">
+        <form method="get" class="d-flex gap-3 flex-wrap">
+            <select name="element" class="form-select filter-select">
+                <option value="">Все персонажи</option>
+                {% for element in elements %}
+                    <option value="{{ element.id }}" {% if selected_element == element.id|stringformat:"s" %}selected{% endif %}>
+                        {{ element.name }}
+                    </option>
+                {% endfor %}
+            </select>
+            <select name="type" class="form-select filter-select">
+                <option value="">Все типы связей</option>
+                {% for type in relationship_types %}
+                    <option value="{{ type.id }}" {% if selected_type == type.id|stringformat:"s" %}selected{% endif %}>
+                        {{ type.name }}
+                    </option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary rounded-pill">
+                <i class="fas fa-filter"></i> Фильтровать
+            </button>
+            {% if selected_element or selected_type %}
+                <a href="{% url 'relationships:relationship_list' world.id %}" class="btn btn-secondary rounded-pill">
+                    <i class="fas fa-times"></i> Сбросить
+                </a>
+            {% endif %}
+        </form>
+    </div>
+
+    {% if relationships %}
+        <div class="relationships-list">
+            {% for rel in relationships %}
+                <div class="relationship-card">
+                    <div class="relationship-avatars">
+                        <div class="avatar-wrapper">
+                            {% if rel.from_element.data %}
+                                {% with cover=rel.from_element.data|get_item:'_cover' %}
+                                    {% if cover %}
+                                        <img src="{{ cover }}" alt="{{ rel.from_element.name }}" class="avatar-img">
+                                    {% else %}
+                                        <div class="avatar-placeholder">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            {% else %}
+                                <div class="avatar-placeholder">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            {% endif %}
+                            <span class="avatar-name">{{ rel.from_element.name }}</span>
+                        </div>
+                        <div class="relationship-arrow">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                        <div class="avatar-wrapper">
+                            {% if rel.to_element.data %}
+                                {% with cover=rel.to_element.data|get_item:'_cover' %}
+                                    {% if cover %}
+                                        <img src="{{ cover }}" alt="{{ rel.to_element.name }}" class="avatar-img">
+                                    {% else %}
+                                        <div class="avatar-placeholder">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            {% else %}
+                                <div class="avatar-placeholder">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            {% endif %}
+                            <span class="avatar-name">{{ rel.to_element.name }}</span>
+                        </div>
+                    </div>
+
+                    <div class="relationship-info">
+                        <span class="relationship-type-badge" style="background: {{ rel.relationship_type.color }}20; color: {{ rel.relationship_type.color }}; border-color: {{ rel.relationship_type.color }}40;">
+                            <i class="fas fa-{{ rel.relationship_type.icon }} me-1"></i>
+                            {{ rel.relationship_type.name }}
+                        </span>
+
+                        <div class="relationship-strength">
+                            <span class="strength-label">Сила связи:</span>
+                            <div class="strength-stars">
+                                <i class="fas fa-star{% if rel.strength < 1 %} opacity-25{% endif %}" style="color: {{ rel.relationship_type.color }};"></i>
+                                <i class="fas fa-star{% if rel.strength < 2 %} opacity-25{% endif %}" style="color: {{ rel.relationship_type.color }};"></i>
+                                <i class="fas fa-star{% if rel.strength < 3 %} opacity-25{% endif %}" style="color: {{ rel.relationship_type.color }};"></i>
+                                <i class="fas fa-star{% if rel.strength < 4 %} opacity-25{% endif %}" style="color: {{ rel.relationship_type.color }};"></i>
+                                <i class="fas fa-star{% if rel.strength < 5 %} opacity-25{% endif %}" style="color: {{ rel.relationship_type.color }};"></i>
+                            </div>
+                        </div>
+
+                        {% if rel.description %}
+                            <p class="relationship-description">{{ rel.description|truncatewords:30 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="relationship-actions">
+                        <a href="{% url 'relationships:relationship_edit' rel.id %}" class="action-btn edit-btn" title="Редактировать">
+                            <i class="fas fa-pen"></i>
+                        </a>
+                        <button class="action-btn delete-btn" onclick="showDeleteModal({{ rel.id }}, '{{ rel.from_element.name|escapejs }}', '{{ rel.to_element.name|escapejs }}', '{{ rel.relationship_type.name|escapejs }}')" title="Удалить">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <i class="fas fa-link"></i>
+            <h4>Нет связей</h4>
+            <p>Создайте первую связь между персонажами</p>
+            <a href="{% url 'relationships:relationship_create' world.id %}" class="btn btn-primary rounded-pill mt-3">
+                <i class="fas fa-plus"></i> Создать связь
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Модальное окно удаления связи -->
+<div class="modal fade" id="deleteRelationshipModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle" style="color: #f472b6;"></i> Удаление связи
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="fas fa-link fa-3x mb-3" style="color: #f472b6; opacity: 0.7;"></i>
+                <p>Вы уверены, что хотите удалить связь?</p>
+                <div class="delete-info">
+                    <strong id="deleteFromName" style="color: #c084fc;"></strong>
+                    <i class="fas fa-arrow-right mx-2" style="color: #64748b;"></i>
+                    <strong id="deleteToName" style="color: #c084fc;"></strong>
+                    <br>
+                    <span id="deleteTypeName" class="badge mt-2"></span>
+                </div>
+                <p class="small text-danger mt-3">Это действие невозможно отменить.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Отмена</button>
+                <form method="post" id="deleteRelationshipForm" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn rounded-pill" style="background: rgba(244, 114, 182, 0.2); border: 1px solid #f472b6; color: #f472b6;">
+                        <i class="fas fa-trash-alt"></i> Удалить
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .filter-bar {
+        background: rgba(12, 16, 28, 0.7);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(109, 40, 217, 0.25);
+        border-radius: 20px;
+        padding: 1rem 1.25rem;
+    }
+
+    .filter-select {
+        background: #0b0e1a;
+        border: 1px solid #2d2f4a;
+        color: #f1f5f9;
+        border-radius: 40px;
+        padding: 10px 16px;
+        min-width: 200px;
+    }
+
+    .filter-select:focus {
+        background: #0f1222;
+        border-color: #a78bfa;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+    }
+
+    .relationships-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .relationship-card {
+        background: rgba(12, 16, 28, 0.7);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(109, 40, 217, 0.25);
+        border-radius: 20px;
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        transition: all 0.2s;
+    }
+
+    .relationship-card:hover {
+        border-color: rgba(139, 92, 246, 0.5);
+        background: rgba(15, 20, 35, 0.8);
+    }
+
+    .relationship-avatars {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .avatar-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .avatar-img, .avatar-placeholder {
+        width: 60px;
+        height: 60px;
+        border-radius: 16px;
+        object-fit: cover;
+        border: 2px solid rgba(139, 92, 246, 0.5);
+    }
+
+    .avatar-placeholder {
+        background: linear-gradient(135deg, #1e1b3a, #0b0e1c);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #818cf8;
+        font-size: 1.5rem;
+    }
+
+    .avatar-name {
+        color: #cbd5e6;
+        font-weight: 500;
+        font-size: 0.9rem;
+        max-width: 100px;
+        text-align: center;
+        word-break: break-word;
+    }
+
+    .relationship-arrow {
+        color: #64748b;
+        font-size: 1.2rem;
+    }
+
+    .relationship-info {
+        flex: 1;
+        min-width: 250px;
+    }
+
+    .relationship-type-badge {
+        display: inline-block;
+        padding: 6px 14px;
+        border-radius: 40px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        border: 1px solid;
+        margin-bottom: 10px;
+    }
+
+    .relationship-strength {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+
+    .strength-label {
+        color: #94a3c6;
+        font-size: 0.8rem;
+    }
+
+    .strength-stars {
+        display: flex;
+        gap: 4px;
+    }
+
+    .strength-stars i {
+        font-size: 0.9rem;
+    }
+
+    .strength-stars i.opacity-25 {
+        opacity: 0.25;
+    }
+
+    .relationship-description {
+        color: #94a3c6;
+        font-size: 0.85rem;
+        margin-bottom: 0;
+        line-height: 1.5;
+    }
+
+    .relationship-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .action-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: 1px solid;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .edit-btn {
+        border-color: #a78bfa;
+        color: #a78bfa;
+    }
+
+    .edit-btn:hover {
+        background: rgba(109, 40, 217, 0.2);
+        border-color: #c084fc;
+        color: #c4b5fd;
+    }
+
+    .delete-btn {
+        border-color: #f472b6;
+        color: #f472b6;
+    }
+
+    .delete-btn:hover {
+        background: rgba(244, 114, 182, 0.2);
+        border-color: #f472b6;
+        color: #f472b6;
+    }
+
+    .empty-state {
+        background: rgba(12, 16, 28, 0.7);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(109, 40, 217, 0.25);
+        border-radius: 24px;
+        padding: 4rem 2rem;
+        text-align: center;
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        color: #64748b;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .empty-state h4 {
+        color: #cbd5e6;
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+        color: #94a3c6;
+    }
+
+    .delete-info {
+        background: rgba(10, 14, 23, 0.5);
+        border-radius: 16px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+</style>
+
+<script>
+    function showDeleteModal(relId, fromName, toName, typeName) {
+        document.getElementById('deleteFromName').textContent = fromName;
+        document.getElementById('deleteToName').textContent = toName;
+        document.getElementById('deleteTypeName').textContent = typeName;
+        document.getElementById('deleteRelationshipForm').action = `/relationships/${relId}/delete/`;
+
+        new bootstrap.Modal(document.getElementById('deleteRelationshipModal')).show();
+    }
+</script>
+{% endblock %}

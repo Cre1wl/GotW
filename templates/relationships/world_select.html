@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Выбор мира - Связи{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="text-center mb-5">
+        <div style="width: 70px; height: 70px; background: linear-gradient(135deg, rgba(109, 40, 217, 0.3), rgba(45, 212, 191, 0.2)); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+            <i class="fas fa-project-diagram fa-2x" style="color: #5eead4;"></i>
+        </div>
+        <h1 class="display-4 fw-bold mb-3" style="background: linear-gradient(125deg, #c4b5fd, #5eead4); -webkit-background-clip: text; background-clip: text; color: transparent;">
+            Визуализация связей
+        </h1>
+        <p class="text-secondary">Выберите мир для просмотра графа связей между персонажами</p>
+    </div>
+
+    <div class="row g-4">
+        {% for world in worlds %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 transition-all">
+                    {% if world.cover_image %}
+                        <img src="{{ world.cover_image.url }}" class="card-img-top" alt="{{ world.name }}" style="height: 180px; object-fit: cover;">
+                    {% else %}
+                        <div class="card-img-top d-flex align-items-center justify-content-center" style="height: 180px; background: linear-gradient(145deg, #1e1b3a, #0b0e1c);">
+                            <i class="fas fa-globe fa-4x" style="color: #818cf8;"></i>
+                        </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title fw-semibold" style="color: #f1f5f9;">{{ world.name }}</h5>
+                        <p class="card-text text-secondary small">{{ world.description|truncatewords:20 }}</p>
+                        <div class="d-flex gap-2 mt-2">
+                            <span class="badge" style="background: rgba(109, 40, 217, 0.3); color: #c4b5fd;">
+                                <i class="fas fa-users me-1"></i>{{ world.characters_count }} персонажей
+                            </span>
+                            <span class="badge" style="background: rgba(45, 212, 191, 0.2); color: #5eead4;">
+                                <i class="fas fa-link me-1"></i>{{ world.relationships_count }} связей
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-0 pb-3">
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'relationships:relationship_graph_detail' world.id %}" class="btn btn-primary rounded-pill flex-grow-1">
+                                <i class="fas fa-project-diagram"></i> Граф связей
+                            </a>
+                            <a href="{% url 'relationships:relationship_list' world.id %}" class="btn btn-outline-secondary rounded-pill">
+                                <i class="fas fa-list"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-globe fa-5x mb-4" style="color: #4c1d95;"></i>
+                    <h3 style="color: #cbd5e6;">Нет миров</h3>
+                    <p class="text-secondary mb-4">Создайте мир, чтобы начать строить связи между персонажами</p>
+                    <a href="{% url 'worlds:world_create' %}" class="btn btn-primary btn-lg rounded-pill px-5">
+                        <i class="fas fa-plus"></i> Создать первый мир
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .transition-all {
+        transition: transform 0.25s ease, box-shadow 0.3s ease;
+    }
+    .transition-all:hover {
+        transform: translateY(-6px);
+        border-color: #c084fc !important;
+    }
+</style>
+{% endblock %}

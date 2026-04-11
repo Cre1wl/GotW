@@ -1,0 +1,509 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Аналитика - {{ world.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb" style="background: rgba(12, 16, 28, 0.6); padding: 0.75rem 1.25rem; border-radius: 50px; backdrop-filter: blur(8px);">
+            <li class="breadcrumb-item"><a href="{% url 'worlds:library' %}" style="color: #a78bfa; text-decoration: none;">Мои миры</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'worlds:world_detail' world.id %}" style="color: #a78bfa; text-decoration: none;">{{ world.name }}</a></li>
+            <li class="breadcrumb-item active" style="color: #94a3c6;">Аналитика</li>
+        </ol>
+    </nav>
+
+    <!-- Заголовок -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div style="width: 50px; height: 50px; background: linear-gradient(135deg, rgba(109, 40, 217, 0.3), rgba(45, 212, 191, 0.2)); border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+            <i class="fas fa-chart-line fa-xl" style="color: #5eead4;"></i>
+        </div>
+        <div>
+            <h1 class="display-5 fw-bold mb-0" style="background: linear-gradient(125deg, #c4b5fd, #5eead4); -webkit-background-clip: text; background-clip: text; color: transparent;">
+                Аналитика мира
+            </h1>
+            <p class="text-secondary mb-0" style="font-size: 0.95rem;">
+                <i class="fas fa-globe me-1" style="color: #a78bfa;"></i> {{ world.name }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Карточки статистики -->
+    <div class="row g-3 mb-4">
+        <!-- Всего элементов -->
+        <div class="col-md-3 col-6">
+            <div class="stats-card">
+                <div class="stats-icon" style="background: linear-gradient(135deg, #6d28d9, #4c1d95);">
+                    <i class="fas fa-cubes"></i>
+                </div>
+                <div class="stats-content">
+                    <span class="stats-label">Всего элементов</span>
+                    <span class="stats-value">{{ total_elements }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Категорий -->
+        <div class="col-md-3 col-6">
+            <div class="stats-card">
+                <div class="stats-icon" style="background: linear-gradient(135deg, #0d9488, #0f766e);">
+                    <i class="fas fa-tags"></i>
+                </div>
+                <div class="stats-content">
+                    <span class="stats-label">Категорий</span>
+                    <span class="stats-value">{{ total_types }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Дата создания -->
+        <div class="col-md-3 col-6">
+            <div class="stats-card">
+                <div class="stats-icon" style="background: linear-gradient(135deg, #7c3aed, #5b21b6);">
+                    <i class="fas fa-calendar-plus"></i>
+                </div>
+                <div class="stats-content">
+                    <span class="stats-label">Создан</span>
+                    <span class="stats-value" style="font-size: 1.5rem;">{{ world.created_at|date:"d.m.Y" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Обновлён -->
+        <div class="col-md-3 col-6">
+            <div class="stats-card">
+                <div class="stats-icon" style="background: linear-gradient(135deg, #b45309, #92400e);">
+                    <i class="fas fa-sync-alt"></i>
+                </div>
+                <div class="stats-content">
+                    <span class="stats-label">Обновлён</span>
+                    <span class="stats-value" style="font-size: 1.5rem;">{{ world.updated_at|date:"d.m.Y" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- График и таблица -->
+    <div class="row g-4">
+        {% if element_types_stats %}
+            <!-- График -->
+            <div class="col-lg-7">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <i class="fas fa-chart-bar" style="color: #a78bfa;"></i>
+                        <span>Распределение по категориям</span>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="elementsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Таблица -->
+            <div class="col-lg-5">
+                <div class="table-card">
+                    <div class="table-header">
+                        <i class="fas fa-list-ul" style="color: #a78bfa;"></i>
+                        <span>Детализация</span>
+                    </div>
+                    <div class="table-body">
+                        {% for type in element_types_stats %}
+                            <div class="table-row">
+                                <div class="table-row-left">
+                                    <div class="color-dot" style="background-color: {{ type.color }};"></div>
+                                    <span class="category-name">{{ type.name }}</span>
+                                </div>
+                                <div class="table-row-right">
+                                    <span class="category-count">{{ type.elements_count }}</span>
+                                    <span class="category-percent">{{ type.percent|floatformat:1 }}%</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="col-12">
+                <div class="empty-state">
+                    <i class="fas fa-chart-pie"></i>
+                    <h4>Нет данных для отображения</h4>
+                    <p>Создайте категории и добавьте элементы, чтобы увидеть аналитику</p>
+                    <a href="{% url 'elements:element_create' world.id %}" class="btn btn-primary rounded-pill mt-3">
+                        <i class="fas fa-plus"></i> Создать первый элемент
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Последние элементы -->
+    {% if recent_elements %}
+        <div class="recent-card mt-4">
+            <div class="recent-header">
+                <i class="fas fa-clock" style="color: #5eead4;"></i>
+                <span>Последние добавленные элементы</span>
+            </div>
+            <div class="recent-body">
+                {% for element in recent_elements %}
+                    <a href="{% url 'elements:element_detail' world.id element.id %}" class="recent-item">
+                        <div class="recent-item-left">
+                            <div class="recent-icon" style="background: linear-gradient(135deg, rgba(109, 40, 217, 0.3), rgba(45, 212, 191, 0.2));">
+                                <i class="fas fa-cube" style="color: #a78bfa;"></i>
+                            </div>
+                            <div>
+                                <div class="recent-name">{{ element.name }}</div>
+                                <div class="recent-category">{{ element.element_type.name }}</div>
+                            </div>
+                        </div>
+                        <div class="recent-time">{{ element.created_at|timesince }} назад</div>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+{% if element_types_stats %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const ctx = document.getElementById('elementsChart').getContext('2d');
+const elementTypesData = {
+    labels: [{% for type in element_types_stats %}'{{ type.name|escapejs }}',{% endfor %}],
+    datasets: [{
+        label: 'Количество элементов',
+        data: [{% for type in element_types_stats %}{{ type.elements_count }},{% endfor %}],
+        backgroundColor: [{% for type in element_types_stats %}'{{ type.color }}',{% endfor %}],
+        borderRadius: 6,
+        borderWidth: 0,
+        barPercentage: 0.6,
+        categoryPercentage: 0.8
+    }]
+};
+
+new Chart(ctx, {
+    type: 'bar',
+    data: elementTypesData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                backgroundColor: 'rgba(15, 18, 37, 0.95)',
+                titleColor: '#f1f5f9',
+                bodyColor: '#cbd5e6',
+                borderColor: 'rgba(139, 92, 246, 0.5)',
+                borderWidth: 1,
+                padding: 12,
+                displayColors: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1,
+                    color: '#94a3c6',
+                    font: { size: 11 }
+                },
+                grid: {
+                    color: 'rgba(139, 92, 246, 0.1)',
+                    drawBorder: false
+                }
+            },
+            x: {
+                ticks: {
+                    color: '#94a3c6',
+                    font: { size: 11 },
+                    maxRotation: 45,
+                    minRotation: 45
+                },
+                grid: {
+                    display: false
+                }
+            }
+        },
+        layout: {
+            padding: {
+                top: 10,
+                bottom: 10
+            }
+        }
+    }
+});
+</script>
+{% endif %}
+
+<style>
+    /* Карточки статистики */
+    .stats-card {
+        background: rgba(12, 16, 28, 0.7);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(109, 40, 217, 0.25);
+        border-radius: 20px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: all 0.25s ease;
+        height: 100%;
+    }
+
+    .stats-card:hover {
+        border-color: rgba(139, 92, 246, 0.5);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px -5px rgba(109, 40, 217, 0.2);
+    }
+
+    .stats-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .stats-content {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .stats-label {
+        color: #94a3c6;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+
+    .stats-value {
+        color: #f1f5f9;
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    /* Карточка графика */
+    .chart-card {
+        background: rgba(12, 16, 28, 0.7);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(109, 40, 217, 0.25);
+        border-radius: 24px;
+        overflow: hidden;
+        height: 100%;
+    }
+
+    .chart-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #e2e8f0;
+        font-weight: 500;
+    }
+
+    .chart-body {
+        padding: 1.5rem;
+        height: 280px;
+    }
+
+    /* Карточка таблицы */
+    .table-card {
+        background: rgba(12, 16, 28, 0.7);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(109, 40, 217, 0.25);
+        border-radius: 24px;
+        overflow: hidden;
+        height: 100%;
+    }
+
+    .table-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #e2e8f0;
+        font-weight: 500;
+    }
+
+    .table-body {
+        padding: 0.75rem 0;
+        max-height: 280px;
+        overflow-y: auto;
+    }
+
+    .table-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1.5rem;
+        transition: background 0.15s;
+    }
+
+    .table-row:hover {
+        background: rgba(109, 40, 217, 0.1);
+    }
+
+    .table-row-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .color-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 4px;
+        flex-shrink: 0;
+    }
+
+    .category-name {
+        color: #e2e8f0;
+        font-weight: 500;
+    }
+
+    .table-row-right {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .category-count {
+        color: #f1f5f9;
+        font-weight: 600;
+        min-width: 30px;
+        text-align: right;
+    }
+
+    .category-percent {
+        color: #5eead4;
+        font-size: 0.85rem;
+        min-width: 50px;
+        text-align: right;
+    }
+
+    /* Пустое состояние */
+    .empty-state {
+        background: rgba(12, 16, 28, 0.7);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(109, 40, 217, 0.25);
+        border-radius: 24px;
+        padding: 3.5rem 2rem;
+        text-align: center;
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        color: #64748b;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .empty-state h4 {
+        color: #cbd5e6;
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+        color: #94a3c6;
+        margin-bottom: 0;
+    }
+
+    /* Последние элементы */
+    .recent-card {
+        background: rgba(12, 16, 28, 0.7);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(109, 40, 217, 0.25);
+        border-radius: 24px;
+        overflow: hidden;
+    }
+
+    .recent-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #e2e8f0;
+        font-weight: 500;
+    }
+
+    .recent-body {
+        padding: 0.5rem 0;
+    }
+
+    .recent-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        text-decoration: none;
+        transition: background 0.15s;
+        border-bottom: 1px solid rgba(139, 92, 246, 0.08);
+    }
+
+    .recent-item:last-child {
+        border-bottom: none;
+    }
+
+    .recent-item:hover {
+        background: rgba(109, 40, 217, 0.1);
+    }
+
+    .recent-item-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .recent-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .recent-name {
+        color: #f1f5f9;
+        font-weight: 500;
+        margin-bottom: 2px;
+    }
+
+    .recent-category {
+        color: #94a3c6;
+        font-size: 0.8rem;
+    }
+
+    .recent-time {
+        color: #64748b;
+        font-size: 0.8rem;
+    }
+
+    /* Скролл для таблицы */
+    .table-body::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .table-body::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .table-body::-webkit-scrollbar-thumb {
+        background: rgba(139, 92, 246, 0.3);
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,25 @@
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle" style="color: #f472b6;"></i> <span id="deleteModalTitle">Подтверждение удаления</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="deleteModalMessage">Вы уверены, что хотите удалить этот элемент?</p>
+                <p class="small text-danger">Это действие невозможно отменить.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Отмена
+                </button>
+                <button type="button" class="btn btn-danger rounded-pill" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Удалить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

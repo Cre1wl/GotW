@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Главная - Guardian of the Worlds{% endblock %}
+
+{% block content %}
+<div class="hero-section text-center fade-in-up">
+    <h1 class="display-3 fw-bold mb-4">Добро пожаловать в Guardian of the Worlds</h1>
+    <p class="lead mb-4">Создавайте свои вселенные, управляйте мирами и развивайте уникальные истории</p>
+    {% if not user.is_authenticated %}
+        <div class="d-flex gap-3 justify-content-center">
+            <a href="{% url 'users:register' %}" class="btn btn-light btn-lg">Начать сейчас</a>
+            <a href="{% url 'users:login' %}" class="btn btn-outline-light btn-lg">Войти</a>
+        </div>
+    {% else %}
+        <a href="{% url 'worlds:library' %}" class="btn btn-light btn-lg">Перейти к мирам</a>
+    {% endif %}
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="card h-100 text-center p-4">
+            <div class="mb-3">
+                <i class="fas fa-globe fa-3x" style="color: #6C5CE7;"></i>
+            </div>
+            <h4>Создавайте миры</h4>
+            <p class="text-muted">Создавайте уникальные вселенные с нуля, определяйте их законы и особенности</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 text-center p-4">
+            <div class="mb-3">
+                <i class="fas fa-users fa-3x" style="color: #6C5CE7;"></i>
+            </div>
+            <h4>Управляйте персонажами</h4>
+            <p class="text-muted">Создавайте персонажей, локации и предметы с произвольными характеристиками</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 text-center p-4">
+            <div class="mb-3">
+                <i class="fas fa-project-diagram fa-3x" style="color: #6C5CE7;"></i>
+            </div>
+            <h4>Стройте связи</h4>
+            <p class="text-muted">Устанавливайте связи между элементами и визуализируйте их в графах</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body p-4">
+                <h4 class="mb-3">Гибкая система полей</h4>
+                <p>Создавайте элементы с любыми полями: текст, число, дата, цвет, изображения и многое другое. Вы сами определяете структуру данных.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body p-4">
+                <h4 class="mb-3">Галереи изображений</h4>
+                <p>Добавляйте изображения к любым элементам, создавайте галереи и управляйте визуальным контентом.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

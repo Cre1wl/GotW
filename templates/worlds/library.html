@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Мои миры{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h1 class="display-4 fw-bold" style="background: linear-gradient(125deg, #c4b5fd, #5eead4); -webkit-background-clip: text; background-clip: text; color: transparent;">
+                <i class="fas fa-globe"></i> Мои миры
+            </h1>
+            <p class="text-secondary">Управляйте своими мирами и вселенными</p>
+        </div>
+        <a href="{% url 'worlds:world_create' %}" class="btn btn-primary btn-lg rounded-pill">
+            <i class="fas fa-plus"></i> Создать мир
+        </a>
+    </div>
+
+    <!-- Поиск -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-10">
+                    <input type="text" name="search" class="form-control"
+                           placeholder="Поиск по названию мира..."
+                           value="{{ search_query }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill">
+                        <i class="fas fa-search"></i> Поиск
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if worlds %}
+        <div class="row g-4">
+            {% for world in worlds %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 transition-all">
+                        {% if world.cover_image %}
+                            <img src="{{ world.cover_image.url }}" class="card-img-top" alt="{{ world.name }}"
+                                 style="height: 200px; object-fit: cover;">
+                        {% else %}
+                            <div class="card-img-top d-flex align-items-center justify-content-center"
+                                 style="height: 200px; background: linear-gradient(145deg, #1e1b3a, #0b0e1c);">
+                                <i class="fas fa-globe fa-4x" style="color: #818cf8;"></i>
+                            </div>
+                        {% endif %}
+
+                        <div class="card-body">
+                            <h5 class="card-title fw-semibold">{{ world.name }}</h5>
+                            <p class="card-text">{{ world.description|truncatewords:25 }}</p>
+                        </div>
+
+                        <div class="card-footer bg-transparent border-0 pb-3">
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'worlds:world_detail' world.id %}" class="btn btn-outline-primary rounded-pill flex-grow-1">
+                                    <i class="fas fa-eye"></i> Открыть
+                                </a>
+                                <a href="{% url 'worlds:world_settings' world.id %}" class="btn btn-outline-secondary rounded-pill">
+                                    <i class="fas fa-cog"></i>
+                                </a>
+                                <button type="button" class="btn rounded-pill delete-world-btn"
+                                        style="border: 1px solid #f472b6; color: #f472b6;"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteModal{{ world.id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Модальное окно удаления мира (ИСПРАВЛЕНО - убран data-bs-backdrop="false") -->
+                <div class="modal fade" id="deleteModal{{ world.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-exclamation-triangle" style="color: #f472b6;"></i> Удаление мира
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Вы уверены, что хотите удалить мир <strong style="color: #c084fc;">"{{ world.name }}"</strong>?</p>
+                                <p class="small" style="color: #f472b6;">Это действие невозможно отменить. Все данные мира будут потеряны навсегда.</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">
+                                    <i class="fas fa-times"></i> Отмена
+                                </button>
+                                <form method="post" action="{% url 'worlds:world_delete' world.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn rounded-pill" style="background: rgba(244, 114, 182, 0.2); border: 1px solid #f472b6; color: #f472b6;">
+                                        <i class="fas fa-trash-alt"></i> Да, удалить
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Пагинация -->
+        {% if worlds.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-5">
+                <ul class="pagination justify-content-center">
+                    {% if worlds.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link rounded-pill" href="?page={{ worlds.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                                <i class="fas fa-chevron-left"></i> Назад
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in worlds.paginator.page_range %}
+                        <li class="page-item {% if worlds.number == num %}active{% endif %}">
+                            <a class="page-link rounded-pill" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                                {{ num }}
+                            </a>
+                        </li>
+                    {% endfor %}
+
+                    {% if worlds.has_next %}
+                        <li class="page-item">
+                            <a class="page-link rounded-pill" href="?page={{ worlds.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                                Вперед <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+
+    {% else %}
+        <div class="text-center py-5 my-5">
+            <div class="mb-4">
+                <i class="fas fa-globe fa-5x" style="color: #4c1d95;"></i>
+            </div>
+            <h3 class="mb-3 fw-semibold">У вас пока нет миров</h3>
+            <p class="text-secondary mb-4">Создайте свой первый мир и начните творить!</p>
+            <a href="{% url 'worlds:world_create' %}" class="btn btn-primary btn-lg px-5 rounded-pill">
+                <i class="fas fa-plus"></i> Создать первый мир
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    .transition-all {
+        transition: transform 0.25s ease, box-shadow 0.3s ease;
+    }
+    .transition-all:hover {
+        transform: translateY(-6px);
+        border-color: #c084fc !important;
+    }
+    .page-link {
+        margin: 0 4px;
+        transition: all 0.2s;
+    }
+    .page-link:hover {
+        transform: translateY(-2px);
+    }
+    .delete-world-btn:hover {
+        background: rgba(244, 114, 182, 0.2) !important;
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}

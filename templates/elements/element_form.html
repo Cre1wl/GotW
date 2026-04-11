@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - {{ world.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb" style="background: rgba(12, 16, 28, 0.6); padding: 0.75rem 1rem; border-radius: 50px;">
+            <li class="breadcrumb-item"><a href="{% url 'worlds:library' %}" style="color: #a78bfa;">Мои миры</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'worlds:world_detail' world.id %}" style="color: #a78bfa;">{{ world.name }}</a></li>
+            <li class="breadcrumb-item active" style="color: #cbd5e6;">{{ title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header" style="background: linear-gradient(135deg, rgba(109, 40, 217, 0.3), rgba(45, 212, 191, 0.15)); border-bottom: 1px solid rgba(139, 92, 246, 0.3);">
+                    <h4 class="mb-0" style="color: #f1f5f9;">
+                        <i class="fas fa-{% if element %}edit{% else %}plus{% endif %}" style="color: #c084fc;"></i>
+                        {{ title }}
+                    </h4>
+                    <p class="small mt-1" style="color: #94a3c6;">Заполните информацию об элементе</p>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="id_name" class="form-label" style="color: #cbd5e6;">Название элемента <span class="text-danger">*</span></label>
+                            <input type="text" name="name" id="id_name" class="form-control"
+                                   value="{% if element %}{{ element.name }}{% endif %}" required placeholder="Введите название">
+                        </div>
+
+                        {% for field in form %}
+                            <div class="mb-3">
+                                <label class="form-label" style="color: #cbd5e6;">
+                                    {{ field.label }}
+                                    {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                </label>
+                                {{ field }}
+                                {% if field.help_text %}
+                                    <div class="form-text text-muted small">{{ field.help_text }}</div>
+                                {% endif %}
+                                {% if field.errors %}
+                                    <div class="alert alert-danger mt-2 small" style="background: rgba(244, 114, 182, 0.1); border: none; color: #f472b6;">
+                                        {{ field.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+
+                        <hr style="border-color: rgba(139, 92, 246, 0.3);">
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'elements:element_list' world.id element_type.id %}" class="btn btn-secondary rounded-pill">
+                                <i class="fas fa-times"></i> Отмена
+                            </a>
+                            <button type="submit" class="btn btn-primary rounded-pill">
+                                <i class="fas fa-save"></i> Сохранить
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Регистрация | Guardian of the Worlds{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow border-0 auth-card">
+                <div class="card-header text-center py-4 auth-header">
+                    <div class="auth-icon-wrapper">
+                        <i class="fas fa-user-plus fa-3x auth-icon"></i>
+                    </div>
+                    <h3 class="mt-3 mb-0" style="color: #f1f5f9;">Создание аккаунта</h3>
+                    <p class="small mt-2" style="color: #94a3c6;">Присоединяйтесь к Guardian of the Worlds</p>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        {% if form.errors %}
+                            <div class="alert alert-danger mb-3" style="background: rgba(244, 114, 182, 0.15); border-left: 3px solid #f472b6; border-radius: 12px; color: #f1f5f9;">
+                                <i class="fas fa-exclamation-circle me-2"></i> Пожалуйста, исправьте следующие ошибки:
+                                <ul class="mb-0 mt-2">
+                                    {% for field in form %}
+                                        {% for error in field.errors %}
+                                            <li><small>{{ error }}</small></li>
+                                        {% endfor %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="id_username" class="form-label fw-semibold" style="color: #cbd5e6;">
+                                <i class="fas fa-user me-2" style="color: #a78bfa;"></i>Имя пользователя <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="username" id="id_username" class="form-control auth-input"
+                                   placeholder="Введите username" required autofocus
+                                   value="{{ form.username.value|default:'' }}">
+                            <div class="form-text small text-muted mt-1">Только буквы, цифры и @/./+/-/_</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_email" class="form-label fw-semibold" style="color: #cbd5e6;">
+                                <i class="fas fa-envelope me-2" style="color: #a78bfa;"></i>Email <span class="text-danger">*</span>
+                            </label>
+                            <input type="email" name="email" id="id_email" class="form-control auth-input"
+                                   placeholder="example@mail.com" required
+                                   value="{{ form.email.value|default:'' }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_password1" class="form-label fw-semibold" style="color: #cbd5e6;">
+                                <i class="fas fa-lock me-2" style="color: #a78bfa;"></i>Пароль <span class="text-danger">*</span>
+                            </label>
+                            <input type="password" name="password1" id="id_password1" class="form-control auth-input"
+                                   placeholder="Введите пароль" required>
+                            <div class="form-text small text-muted mt-1">Минимум 8 символов, не должен быть слишком простым</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="id_password2" class="form-label fw-semibold" style="color: #cbd5e6;">
+                                <i class="fas fa-lock me-2" style="color: #a78bfa;"></i>Подтверждение пароля <span class="text-danger">*</span>
+                            </label>
+                            <input type="password" name="password2" id="id_password2" class="form-control auth-input"
+                                   placeholder="Повторите пароль" required>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill auth-btn">
+                                <i class="fas fa-user-plus me-2"></i> Зарегистрироваться
+                            </button>
+                        </div>
+
+                        <hr class="my-4 auth-hr">
+
+                        <div class="text-center">
+                            <p class="mb-0" style="color: #94a3c6;">
+                                Уже есть аккаунт?
+                                <a href="{% url 'users:login' %}" class="text-decoration-none auth-link">
+                                    Войти <i class="fas fa-arrow-right ms-1"></i>
+                                </a>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <small class="text-muted">
+                    <i class="fas fa-gavel me-1"></i> Регистрируясь, вы соглашаетесь с нашими условиями
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .auth-card {
+        background: rgba(8, 10, 20, 0.95) !important;
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(139, 92, 246, 0.5) !important;
+        border-radius: 28px;
+        box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(139, 92, 246, 0.2) inset;
+    }
+    .auth-header {
+        background: linear-gradient(135deg, rgba(109, 40, 217, 0.4), rgba(45, 212, 191, 0.2)) !important;
+        border-radius: 28px 28px 0 0 !important;
+        border-bottom: 1px solid rgba(139, 92, 246, 0.3);
+    }
+    .auth-icon-wrapper {
+        display: inline-block;
+        background: linear-gradient(135deg, #6d28d9, #3b0764);
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        box-shadow: 0 0 20px rgba(109, 40, 217, 0.5);
+    }
+    .auth-icon {
+        color: white !important;
+        background: transparent !important;
+        -webkit-background-clip: unset !important;
+        background-clip: unset !important;
+    }
+    .auth-input {
+        background: #0a0d18 !important;
+        border: 1px solid #3a2e6b !important;
+        color: #f1f5f9 !important;
+        border-radius: 50px;
+        padding: 0.8rem 1.2rem;
+        transition: all 0.2s;
+    }
+    .auth-input:focus {
+        background: #0f1222 !important;
+        border-color: #c084fc !important;
+        box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.2);
+        color: white;
+    }
+    .auth-input::placeholder {
+        color: #5a6090;
+    }
+    .auth-btn {
+        background: linear-gradient(105deg, #6d28d9, #3b0764);
+        border: none;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(109, 40, 217, 0.4);
+    }
+    .auth-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
+        background: linear-gradient(105deg, #7c3aed, #4c1d95);
+    }
+    .auth-hr {
+        border-color: rgba(139, 92, 246, 0.3);
+    }
+    .auth-link {
+        color: #c084fc;
+        transition: all 0.2s;
+    }
+    .auth-link:hover {
+        color: #e9d5ff;
+        text-shadow: 0 0 5px rgba(192, 132, 252, 0.5);
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Галереи - {{ obj.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'worlds:library' %}">Мои миры</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'worlds:world_detail' obj.id %}">{{ obj.name }}</a></li>
+            <li class="breadcrumb-item active">Галереи</li>
+        </ol>
+    </nav>
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-5 fw-bold">
+            <i class="fas fa-images text-primary"></i> Галереи
+        </h1>
+        <a href="{% url 'galleries:gallery_create' content_type_id object_id %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Создать галерею
+        </a>
+    </div>
+    
+    {% if galleries %}
+        <div class="row">
+            {% for gallery in galleries %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        {% with primary_image=gallery.get_primary_image %}
+                            {% if primary_image %}
+                                <img src="{{ primary_image.image.url }}" class="card-img-top" alt="{{ gallery.name }}" style="height: 200px; object-fit: cover;">
+                            {% else %}
+                                <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height: 200px;">
+                                    <i class="fas fa-image fa-4x text-muted"></i>
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ gallery.name }}</h5>
+                            <p class="card-text text-muted small">{{ gallery.description|truncatewords:20 }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-images"></i> {{ gallery.get_images_count }} изображений
+                                </small>
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar"></i> {{ gallery.created_at|date:"d.m.Y" }}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <div class="btn-group w-100">
+                                <a href="{% url 'galleries:gallery_detail' gallery.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i> Просмотр
+                                </a>
+                                <a href="{% url 'galleries:gallery_edit' gallery.id %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'galleries:gallery_delete' gallery.id %}" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-images fa-5x text-muted"></i>
+            </div>
+            <h3 class="mb-3">Нет галерей</h3>
+            <p class="text-muted mb-4">Создайте первую галерею для изображений</p>
+            <a href="{% url 'galleries:gallery_create' content_type_id object_id %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus"></i> Создать галерею
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

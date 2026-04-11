@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Редактирование профиля{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header" style="background: linear-gradient(135deg, rgba(109, 40, 217, 0.3), rgba(45, 212, 191, 0.15)); border-bottom: 1px solid rgba(139, 92, 246, 0.3);">
+                    <h4 class="mb-0" style="color: #f1f5f9;">
+                        <i class="fas fa-user-edit" style="color: #c084fc;"></i> Редактирование профиля
+                    </h4>
+                    <p class="small mt-1" style="color: #94a3c6;">Измените информацию о себе</p>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        {% if form.errors %}
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert" style="background: rgba(244, 114, 182, 0.15); border-left-color: #f472b6; color: #f1f5f9;">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                <strong>Ошибка!</strong> Пожалуйста, исправьте ошибки в форме.
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endif %}
+
+                        <!-- Аватар -->
+                        <div class="mb-4 text-center">
+                            <div class="mb-3">
+                                {% if user.avatar %}
+                                    <img src="{{ user.avatar.url }}"
+                                         alt="{{ user.username }}"
+                                         class="rounded-circle"
+                                         style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #c084fc;">
+                                {% else %}
+                                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center"
+                                         style="width: 120px; height: 120px; background: linear-gradient(135deg, #6d28d9, #2dd4bf);">
+                                        <i class="fas fa-user fa-3x text-white"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <label for="id_avatar" class="form-label" style="color: #cbd5e6;">Изменить аватар</label>
+                            {{ form.avatar }}
+                            {% if form.avatar.errors %}
+                                <div class="text-danger small mt-1">{{ form.avatar.errors }}</div>
+                            {% endif %}
+                            <div class="form-text small text-muted">Рекомендуемый размер: 500x500px. Максимум 5MB</div>
+                        </div>
+
+                        <!-- Никнейм (только для чтения) -->
+                        <div class="mb-3">
+                            <label class="form-label" style="color: #cbd5e6;">
+                                <i class="fas fa-user-tag"></i> Никнейм
+                            </label>
+                            <input type="text" class="form-control" value="{{ user.username }}" readonly disabled style="background: rgba(0,0,0,0.3); cursor: not-allowed;">
+                            <div class="form-text text-muted small">Никнейм нельзя изменить</div>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="mb-3">
+                            <label for="id_email" class="form-label" style="color: #cbd5e6;">
+                                <i class="fas fa-envelope"></i> Email
+                            </label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger small mt-1">{{ form.email.errors }}</div>
+                            {% endif %}
+                            <div class="form-text text-muted small">Email используется для восстановления пароля</div>
+                        </div>
+
+                        <!-- О себе -->
+                        <div class="mb-3">
+                            <label for="id_bio" class="form-label" style="color: #cbd5e6;">
+                                <i class="fas fa-info-circle"></i> О себе
+                            </label>
+                            {{ form.bio }}
+                            {% if form.bio.errors %}
+                                <div class="text-danger small mt-1">{{ form.bio.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Местоположение -->
+                        <div class="mb-3">
+                            <label for="id_location" class="form-label" style="color: #cbd5e6;">
+                                <i class="fas fa-map-marker-alt"></i> Местоположение
+                            </label>
+                            {{ form.location }}
+                            {% if form.location.errors %}
+                                <div class="text-danger small mt-1">{{ form.location.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <h5 class="mt-4 mb-3" style="color: #c4b5fd;"><i class="fas fa-share-alt"></i> Социальные сети</h5>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="id_telegram" class="form-label" style="color: #cbd5e6;">
+                                    <i class="fab fa-telegram" style="color: #2dd4bf;"></i> Telegram
+                                </label>
+                                {{ form.telegram }}
+                                <div class="form-text text-muted small">Ваш @username в Telegram</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="id_github" class="form-label" style="color: #cbd5e6;">
+                                    <i class="fab fa-github" style="color: #cbd5e6;"></i> GitHub
+                                </label>
+                                {{ form.github }}
+                                <div class="form-text text-muted small">Имя пользователя GitHub</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="id_twitter" class="form-label" style="color: #cbd5e6;">
+                                    <i class="fab fa-twitter" style="color: #1da1f2;"></i> Twitter/X
+                                </label>
+                                {{ form.twitter }}
+                                <div class="form-text text-muted small">@username в Twitter/X</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            {{ form.email_notifications }}
+                            <label class="form-check-label" for="id_email_notifications" style="color: #cbd5e6;">
+                                <i class="fas fa-bell"></i> Получать email уведомления
+                            </label>
+                            <div class="form-text text-muted small">О новых комментариях, приглашениях и важных событиях</div>
+                        </div>
+
+                        <hr style="border-color: rgba(139, 92, 246, 0.3);">
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Сохранить изменения
+                            </button>
+                            <a href="{% url 'users:profile' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Отмена
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Опасная зона -->
+            <div class="card shadow mt-4" style="border: 1px solid rgba(244, 114, 182, 0.5);">
+                <div class="card-header" style="background: rgba(244, 114, 182, 0.15); border-bottom: 1px solid rgba(244, 114, 182, 0.3);">
+                    <h5 class="mb-0" style="color: #f472b6;">
+                        <i class="fas fa-exclamation-triangle"></i> Опасная зона
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p style="color: #94a3c6;">Удаление аккаунта приведет к безвозвратной потере всех ваших миров, персонажей и данных.</p>
+                    <a href="{% url 'users:delete_account' %}" class="btn" style="background: rgba(244, 114, 182, 0.2); border: 1px solid #f472b6; color: #f472b6; border-radius: 50px;">
+                        <i class="fas fa-trash-alt"></i> Удалить аккаунт
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Стили для disabled поля */
+    input:disabled, input[readonly] {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    /* Улучшенные стили для форм */
+    .form-control, .form-select {
+        transition: all 0.2s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #a78bfa;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+    }
+</style>
+{% endblock %}

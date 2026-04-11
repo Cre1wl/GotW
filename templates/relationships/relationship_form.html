@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if relationship %}Редактирование{% else %}Создание{% endif %} связи - {{ world.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb" style="background: rgba(12, 16, 28, 0.6); padding: 0.75rem 1rem; border-radius: 50px;">
+            <li class="breadcrumb-item"><a href="{% url 'worlds:library' %}" style="color: #a78bfa;">Мои миры</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'worlds:world_detail' world.id %}" style="color: #a78bfa;">{{ world.name }}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'relationships:relationship_graph_detail' world.id %}" style="color: #a78bfa;">Граф связей</a></li>
+            <li class="breadcrumb-item active" style="color: #cbd5e6;">{% if relationship %}Редактирование{% else %}Создание{% endif %} связи</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow border-0">
+                <div class="card-header py-4" style="background: linear-gradient(135deg, rgba(109, 40, 217, 0.3), rgba(45, 212, 191, 0.15)); border-bottom: 1px solid rgba(139, 92, 246, 0.3);">
+                    <h4 class="mb-0 text-center" style="color: #f1f5f9;">
+                        <i class="fas fa-link me-2" style="color: #c084fc;"></i>
+                        {% if relationship %}Редактирование связи{% else %}Создание новой связи{% endif %}
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="info-banner mb-4">
+                        <i class="fas fa-info-circle" style="color: #5eead4;"></i>
+                        <span>Связи можно создавать только между персонажами</span>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label" style="color: #cbd5e6;">
+                                    <i class="fas fa-user me-2"></i>От кого
+                                </label>
+                                {% if relationship %}
+                                    <input type="text" class="form-control" value="{{ relationship.from_element.name }}" readonly style="background: #1a1f35;">
+                                    <input type="hidden" name="from_element" value="{{ relationship.from_element.id }}">
+                                {% else %}
+                                    <select name="from_element" class="form-select" required>
+                                        <option value="">Выберите персонажа</option>
+                                        {% for element in elements %}
+                                            <option value="{{ element.id }}">{{ element.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" style="color: #cbd5e6;">
+                                    <i class="fas fa-user me-2"></i>К кому
+                                </label>
+                                <select name="to_element" class="form-select" required>
+                                    <option value="">Выберите персонажа</option>
+                                    {% for element in elements %}
+                                        <option value="{{ element.id }}" {% if relationship and relationship.to_element.id == element.id %}selected{% endif %}>
+                                            {{ element.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" style="color: #cbd5e6;">
+                                <i class="fas fa-tag me-2"></i>Тип связи
+                            </label>
+                            <select name="relationship_type" class="form-select" required>
+                                <option value="">Выберите тип связи</option>
+                                {% for type in relationship_types %}
+                                    <option value="{{ type.id }}" {% if relationship and relationship.relationship_type.id == type.id %}selected{% endif %}>
+                                        {{ type.name }}{% if type.reverse_name %} (↔ {{ type.reverse_name }}){% endif %}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="mt-2">
+                                <a href="{% url 'relationships:relationship_type_create' %}?world_id={{ world.id }}" class="text-decoration-none" style="color: #a78bfa; font-size: 0.85rem;">
+                                    <i class="fas fa-plus-circle"></i> Создать новый тип связи
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" style="color: #cbd5e6;">
+                                <i class="fas fa-heart me-2"></i>Сила связи
+                            </label>
+                            <select name="strength" class="form-select">
+                                <option value="1" {% if relationship and relationship.strength == 1 %}selected{% endif %}>Очень слабая</option>
+                                <option value="2" {% if relationship and relationship.strength == 2 %}selected{% endif %}>Слабая</option>
+                                <option value="3" {% if not relationship or relationship.strength == 3 %}selected{% endif %}>Средняя</option>
+                                <option value="4" {% if relationship and relationship.strength == 4 %}selected{% endif %}>Сильная</option>
+                                <option value="5" {% if relationship and relationship.strength == 5 %}selected{% endif %}>Очень сильная</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label" style="color: #cbd5e6;">
+                                <i class="fas fa-align-left me-2"></i>Описание
+                            </label>
+                            <textarea name="description" class="form-control" rows="3" placeholder="Опишите характер связи...">{{ relationship.description|default:'' }}</textarea>
+                        </div>
+
+                        <hr style="border-color: rgba(139, 92, 246, 0.3);">
+
+                        <div class="d-flex gap-3 justify-content-end">
+                            <a href="{% url 'relationships:relationship_graph_detail' world.id %}" class="btn btn-secondary rounded-pill px-4">
+                                <i class="fas fa-times"></i> Отмена
+                            </a>
+                            <button type="submit" class="btn btn-primary rounded-pill px-5">
+                                <i class="fas fa-save"></i> {% if relationship %}Сохранить{% else %}Создать{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .info-banner {
+        background: rgba(109, 40, 217, 0.15);
+        border: 1px solid rgba(139, 92, 246, 0.25);
+        border-radius: 14px;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .info-banner span {
+        color: #cbd5e6;
+        font-size: 0.9rem;
+    }
+    .form-control, .form-select {
+        background: #0b0e1a;
+        border: 1px solid #2d2f4a;
+        color: #f1f5f9;
+        border-radius: 12px;
+        padding: 10px 14px;
+    }
+    .form-control:focus, .form-select:focus {
+        background: #0f1222;
+        border-color: #a78bfa;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+    }
+</style>
+{% endblock %}

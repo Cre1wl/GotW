@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+*.egg
+
+# Django
+*.log
+db.sqlite3
+media/
+staticfiles/
+static_collected/
+
+# IDE 
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Секреты
+.env
+.secret_key
+
+# Системные
+.DS_Store
+Thumbs.db
+desktop.ini

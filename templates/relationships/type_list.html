@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Типы связей{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb" style="background: rgba(12, 16, 28, 0.6); padding: 0.75rem 1rem; border-radius: 50px;">
+            <li class="breadcrumb-item"><a href="{% url 'worlds:library' %}" style="color: #a78bfa;">Мои миры</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'relationships:relationship_graph' %}" style="color: #a78bfa;">Связи</a></li>
+            <li class="breadcrumb-item active" style="color: #cbd5e6;">Типы связей</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="display-5 fw-bold" style="background: linear-gradient(125deg, #c4b5fd, #5eead4); -webkit-background-clip: text; background-clip: text; color: transparent;">
+                <i class="fas fa-tags"></i> Типы связей
+            </h1>
+            <p class="text-secondary">Управление типами связей между персонажами</p>
+        </div>
+        <a href="{% url 'relationships:relationship_type_create' %}" class="btn btn-primary rounded-pill">
+            <i class="fas fa-plus"></i> Создать тип
+        </a>
+    </div>
+
+    <div class="row g-4">
+        {% for type in types %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div style="width: 50px; height: 50px; background: {{ type.color }}20; border: 2px solid {{ type.color }}; border-radius: 14px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-{{ type.icon }}" style="color: {{ type.color }};"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0" style="color: #f1f5f9;">{{ type.name }}</h5>
+                                {% if type.reverse_name %}
+                                    <small style="color: #94a3c6;">↔ {{ type.reverse_name }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <p class="text-secondary small">{{ type.description|default:"Нет описания"|truncatewords:25 }}</p>
+                        <div class="d-flex gap-2 mt-2">
+                            {% if type.is_bidirectional %}
+                                <span class="badge" style="background: rgba(45, 212, 191, 0.2); color: #5eead4;">
+                                    <i class="fas fa-arrows-alt-h"></i> Двунаправленная
+                                </span>
+                            {% endif %}
+                            {% if type.is_system %}
+                                <span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #a78bfa;">
+                                    <i class="fas fa-shield-alt"></i> Системная
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if not type.is_system %}
+                        <div class="card-footer bg-transparent border-0 pb-3">
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'relationships:relationship_type_edit' type.id %}" class="btn btn-sm btn-outline-secondary rounded-pill">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button onclick="deleteType({{ type.id }}, '{{ type.name|escapejs }}')" class="btn btn-sm btn-outline-danger rounded-pill">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-tags fa-4x" style="color: #64748b;"></i>
+                    <h3 class="mt-3" style="color: #cbd5e6;">Нет типов связей</h3>
+                    <a href="{% url 'relationships:relationship_type_create' %}" class="btn btn-primary mt-3 rounded-pill">
+                        Создать первый тип
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Модальное окно удаления -->
+<div class="modal fade" id="deleteTypeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle" style="color: #f472b6;"></i> Удаление типа связи</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить тип связи <strong id="deleteTypeName" style="color: #c084fc;"></strong>?</p>
+                <p class="small text-danger">Все связи этого типа будут удалены. Это действие невозможно отменить.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Отмена</button>
+                <form method="post" id="deleteTypeForm" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger rounded-pill">Удалить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let typeIdToDelete = null;
+
+    function deleteType(typeId, typeName) {
+        typeIdToDelete = typeId;
+        document.getElementById('deleteTypeName').textContent = typeName;
+        document.getElementById('deleteTypeForm').action = `/relationships/types/${typeId}/delete/`;
+        new bootstrap.Modal(document.getElementById('deleteTypeModal')).show();
+    }
+</script>
+{% endblock %}

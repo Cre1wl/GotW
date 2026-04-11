@@ -1,0 +1,829 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load world_filters %}
+
+{% block title %}{{ world.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- Левая боковая панель с категориями -->
+        <div class="col-md-3">
+            <div class="card shadow sticky-top" style="top: 80px;">
+                <div class="card-header" style="background: linear-gradient(135deg, rgba(109, 40, 217, 0.3), rgba(45, 212, 191, 0.15));">
+                    <h5 class="mb-0" style="color: #f1f5f9;">
+                        <i class="fas fa-tags"></i> Категории
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="#" class="list-group-item list-group-item-action category-link active" data-category-id="all">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-layer-group"></i>
+                                <span>Все элементы</span>
+                            </div>
+                            <span class="badge">{{ stats.elements_count }}</span>
+                        </a>
+                        {% for category in categories %}
+                            <div class="list-group-item category-link-wrapper" style="padding: 0;">
+                                <a href="#" class="category-link" data-category-id="{{ category.id }}" style="flex: 1;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <i class="fas fa-{{ category.icon|default:'cube' }}"></i>
+                                        <span>{{ category.name }}</span>
+                                    </div>
+                                    <span class="badge">{{ category.elements.count }}</span>
+                                </a>
+                                <div class="category-actions">
+                                    <button class="category-action-btn" onclick="editCategory({{ category.id }}, '{{ category.name|escapejs }}', '{{ category.icon|default:'cube'|escapejs }}')" title="Редактировать">
+                                        <i class="fas fa-pen"></i>
+                                    </button>
+                                    <button class="category-action-btn delete" onclick="deleteCategory({{ category.id }}, '{{ category.name|escapejs }}')" title="Удалить">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="button" class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#createCategoryModal">
+                        <i class="fas fa-plus"></i> Создать категорию
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая часть с элементами -->
+        <div class="col-md-9">
+            <!-- Обложка мира -->
+            {% if world.cover_image %}
+                <div class="mb-4 rounded-4 overflow-hidden shadow" style="max-height: 300px;">
+                    <img src="{{ world.cover_image.url }}" alt="{{ world.name }}" class="w-100" style="object-fit: cover; max-height: 300px;">
+                </div>
+            {% endif %}
+
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                <div>
+                    <h1 class="display-5 fw-bold" style="background: linear-gradient(125deg, #c4b5fd, #5eead4); -webkit-background-clip: text; background-clip: text; color: transparent;">
+                        {{ world.name }}
+                    </h1>
+                    <p class="text-secondary" style="word-wrap: break-word; white-space: normal; word-break: break-word; max-width: 100%;">
+                        {{ world.description|default:"Описание отсутствует" }}
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'worlds:world_dashboard' world.id %}" class="btn btn-outline-primary btn-lg">
+                        <i class="fas fa-chart-line"></i> Аналитика
+                    </a>
+                    <a href="{% url 'elements:element_create' world.id %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-plus"></i> Создать элемент
+                    </a>
+                </div>
+            </div>
+
+            <!-- Поиск по элементам -->
+            <div class="search-box mb-4">
+                <form method="get" class="search-form">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" name="search" class="search-input" placeholder="Поиск по названию элемента..." value="{{ search_query }}">
+                    {% if search_query %}
+                        <a href="{% url 'worlds:world_detail' world.id %}" class="search-clear">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    {% endif %}
+                </form>
+            </div>
+
+            <!-- Карточки элементов -->
+            <div id="elementsContainer" class="row">
+                {% for element in elements %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100 element-card">
+                            <div class="card-img-top-wrapper">
+                                {% with cover=element.data|get_cover %}
+                                    {% if cover %}
+                                        <img src="{{ cover }}" class="card-img-top" alt="{{ element.name }}" style="height: 180px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="card-img-top d-flex align-items-center justify-content-center" style="height: 180px; background: linear-gradient(135deg, #1e1b3a, #0b0e1c);">
+                                            <i class="fas fa-cube fa-4x" style="color: #818cf8;"></i>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title">{{ element.name }}</h5>
+                                <p class="card-text small text-secondary">
+                                    <i class="fas fa-tag"></i> {{ element.element_type.name }}
+                                </p>
+                            </div>
+                            <div class="card-footer bg-transparent border-0 pb-3">
+                                <div class="btn-group w-100 gap-2">
+                                    <a href="{% url 'elements:element_detail' world.id element.id %}" class="btn btn-sm btn-outline-primary rounded-pill">
+                                        <i class="fas fa-eye"></i> Открыть
+                                    </a>
+                                    <a href="{% url 'elements:element_edit' world.id element.id %}" class="btn btn-sm btn-outline-secondary rounded-pill">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" data-bs-toggle="modal" data-bs-target="#deleteElementModal{{ element.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Модальное окно удаления элемента -->
+                    <div class="modal fade" id="deleteElementModal{{ element.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">
+                                        <i class="fas fa-exclamation-triangle" style="color: #f472b6;"></i> Удаление элемента
+                                    </h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>Вы уверены, что хотите удалить элемент <strong style="color: #c084fc;">"{{ element.name }}"</strong>?</p>
+                                    <p class="small text-danger">Это действие невозможно отменить.</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Отмена</button>
+                                    <form method="post" action="{% url 'elements:element_delete' world.id element.id %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger rounded-pill">Удалить</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12">
+                        <div class="text-center py-5">
+                            <i class="fas fa-search fa-5x" style="color: #4c1d95;"></i>
+                            <h3 class="mt-3">
+                                {% if search_query %}
+                                    Ничего не найдено
+                                {% else %}
+                                    Нет элементов
+                                {% endif %}
+                            </h3>
+                            <p class="text-secondary">
+                                {% if search_query %}
+                                    По запросу "{{ search_query }}" ничего не найдено
+                                {% else %}
+                                    Создайте первый элемент в этом мире
+                                {% endif %}
+                            </p>
+                            {% if search_query %}
+                                <a href="{% url 'worlds:world_detail' world.id %}" class="btn btn-secondary rounded-pill">
+                                    <i class="fas fa-times"></i> Сбросить поиск
+                                </a>
+                            {% else %}
+                                <a href="{% url 'elements:element_create' world.id %}" class="btn btn-primary rounded-pill">
+                                    <i class="fas fa-plus"></i> Создать элемент
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно создания категории -->
+<div class="modal fade" id="createCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-folder-plus"></i> Создание категории</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <label class="form-label">Название категории</label>
+                <input type="text" id="newCategoryName" class="form-control mb-3" placeholder="Например: Персонажи, Локации...">
+
+                <label class="form-label">Иконка</label>
+                <div class="icon-input-wrapper">
+                    <div class="icon-preview" id="createIconPreview">
+                        <i class="fas fa-cube"></i>
+                    </div>
+                    <input type="text" id="newCategoryIcon" class="form-control" value="cube" placeholder="Название иконки">
+                </div>
+
+                <div class="icon-suggestions">
+                    <span class="icon-suggestions-label">Популярные иконки:</span>
+                    <div class="icon-grid" id="createIconGrid">
+                        {% include 'elements/icon_options.html' %}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary rounded-pill" id="saveCategoryBtn">Создать</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно редактирования категории -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-edit"></i> Редактирование категории</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editCategoryId">
+                <label class="form-label">Название категории</label>
+                <input type="text" id="editCategoryName" class="form-control mb-3">
+
+                <label class="form-label">Иконка</label>
+                <div class="icon-input-wrapper">
+                    <div class="icon-preview" id="editIconPreview">
+                        <i class="fas fa-cube"></i>
+                    </div>
+                    <input type="text" id="editCategoryIcon" class="form-control" placeholder="Название иконки">
+                </div>
+
+                <div class="icon-suggestions">
+                    <span class="icon-suggestions-label">Популярные иконки:</span>
+                    <div class="icon-grid" id="editIconGrid">
+                        {% include 'elements/icon_options.html' %}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary rounded-pill" id="updateCategoryBtn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно удаления категории -->
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle" style="color: #f472b6;"></i> Удаление категории
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить категорию <strong id="deleteCategoryName" style="color: #c084fc;"></strong>?</p>
+                <p class="small text-danger">Все элементы в этой категории будут также удалены. Это действие невозможно отменить.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Отмена</button>
+                <form method="post" id="deleteCategoryForm" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger rounded-pill">Удалить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Функция обновления превью иконки
+    function updateIconPreview(inputId, previewId) {
+        const input = document.getElementById(inputId);
+        const preview = document.getElementById(previewId);
+
+        const updatePreview = () => {
+            const iconName = input.value.trim() || 'cube';
+            preview.innerHTML = `<i class="fas fa-${iconName}"></i>`;
+        };
+
+        input.addEventListener('input', updatePreview);
+        updatePreview();
+    }
+
+    // Инициализация выбора иконок из сетки
+    function initIconGrid(gridId, inputId, previewId) {
+        const grid = document.getElementById(gridId);
+        const input = document.getElementById(inputId);
+        const preview = document.getElementById(previewId);
+
+        grid.querySelectorAll('.icon-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const iconName = this.dataset.icon;
+                input.value = iconName;
+                preview.innerHTML = `<i class="fas fa-${iconName}"></i>`;
+
+                grid.querySelectorAll('.icon-option').forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+
+        input.addEventListener('input', function() {
+            const iconName = this.value.trim();
+            grid.querySelectorAll('.icon-option').forEach(option => {
+                option.classList.remove('selected');
+                if (option.dataset.icon === iconName) {
+                    option.classList.add('selected');
+                }
+            });
+        });
+    }
+
+    // Инициализация при загрузке
+    updateIconPreview('newCategoryIcon', 'createIconPreview');
+    initIconGrid('createIconGrid', 'newCategoryIcon', 'createIconPreview');
+
+    // Создание категории
+    document.getElementById('saveCategoryBtn')?.addEventListener('click', async function() {
+        const name = document.getElementById('newCategoryName').value.trim();
+        const icon = document.getElementById('newCategoryIcon').value.trim() || 'cube';
+
+        if (!name) {
+            alert('Введите название категории');
+            return;
+        }
+
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Создание...';
+
+        try {
+            const response = await fetch("{% url 'elements:category_create_ajax' world.id %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `name=${encodeURIComponent(name)}&icon=${encodeURIComponent(icon)}`
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                location.reload();
+            } else {
+                alert(data.error || 'Ошибка при создании категории');
+                this.disabled = false;
+                this.innerHTML = 'Создать';
+            }
+        } catch (error) {
+            console.error('Ошибка:', error);
+            alert('Произошла ошибка при создании категории');
+            this.disabled = false;
+            this.innerHTML = 'Создать';
+        }
+    });
+
+    // Функция открытия модалки редактирования категории
+    window.editCategory = function(categoryId, categoryName, categoryIcon) {
+        document.getElementById('editCategoryId').value = categoryId;
+        document.getElementById('editCategoryName').value = categoryName;
+        document.getElementById('editCategoryIcon').value = categoryIcon || 'cube';
+
+        updateIconPreview('editCategoryIcon', 'editIconPreview');
+
+        // Переинициализируем сетку
+        const grid = document.getElementById('editIconGrid');
+        initIconGrid('editIconGrid', 'editCategoryIcon', 'editIconPreview');
+
+        // Подсвечиваем выбранную иконку
+        grid.querySelectorAll('.icon-option').forEach(option => {
+            option.classList.remove('selected');
+            if (option.dataset.icon === categoryIcon) {
+                option.classList.add('selected');
+            }
+        });
+
+        new bootstrap.Modal(document.getElementById('editCategoryModal')).show();
+    };
+
+    // Функция удаления категории
+    window.deleteCategory = function(categoryId, categoryName) {
+        document.getElementById('deleteCategoryName').textContent = categoryName;
+        document.getElementById('deleteCategoryForm').action = `/elements/category/${categoryId}/delete/`;
+        new bootstrap.Modal(document.getElementById('deleteCategoryModal')).show();
+    };
+
+    // Обновление категории
+    document.getElementById('updateCategoryBtn')?.addEventListener('click', async function() {
+        const categoryId = document.getElementById('editCategoryId').value;
+        const name = document.getElementById('editCategoryName').value.trim();
+        const icon = document.getElementById('editCategoryIcon').value.trim() || 'cube';
+
+        if (!name) {
+            alert('Введите название категории');
+            return;
+        }
+
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Сохранение...';
+
+        try {
+            const response = await fetch(`/elements/category/${categoryId}/update/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `name=${encodeURIComponent(name)}&icon=${encodeURIComponent(icon)}`
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                location.reload();
+            } else {
+                alert(data.error || 'Ошибка при обновлении категории');
+                this.disabled = false;
+                this.innerHTML = 'Сохранить';
+            }
+        } catch (error) {
+            console.error('Ошибка:', error);
+            alert('Произошла ошибка');
+            this.disabled = false;
+            this.innerHTML = 'Сохранить';
+        }
+    });
+
+    // Фильтрация элементов по категории
+    document.querySelectorAll('.category-link').forEach(link => {
+        link.addEventListener('click', async function(e) {
+            e.preventDefault();
+
+            document.querySelectorAll('.category-link').forEach(l => l.classList.remove('active'));
+            this.classList.add('active');
+
+            const categoryId = this.dataset.categoryId;
+            const searchQuery = new URLSearchParams(window.location.search).get('search') || '';
+
+            if (categoryId === 'all') {
+                let url = `{% url 'worlds:world_detail' world.id %}`;
+                if (searchQuery) {
+                    url += `?search=${encodeURIComponent(searchQuery)}`;
+                }
+                window.location.href = url;
+                return;
+            }
+
+            try {
+                let url = `/elements/world/{{ world.id }}/category/${categoryId}/elements/`;
+                if (searchQuery) {
+                    url += `?search=${encodeURIComponent(searchQuery)}`;
+                }
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                const container = document.getElementById('elementsContainer');
+                if (data.elements.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-12">
+                            <div class="text-center py-5">
+                                <i class="fas fa-folder-open fa-5x" style="color: #4c1d95;"></i>
+                                <h3 class="mt-3">Нет элементов</h3>
+                                <p class="text-secondary">В этой категории пока нет элементов</p>
+                                <a href="{% url 'elements:element_create' world.id %}" class="btn btn-primary rounded-pill">
+                                    <i class="fas fa-plus"></i> Создать элемент
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = data.elements.map(element => `
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100 element-card">
+                            <div class="card-img-top-wrapper">
+                                ${element.cover_url ?
+                                    `<img src="${element.cover_url}" class="card-img-top" alt="${escapeHtml(element.name)}" style="height: 180px; object-fit: cover;">` :
+                                    `<div class="card-img-top d-flex align-items-center justify-content-center" style="height: 180px; background: linear-gradient(135deg, #1e1b3a, #0b0e1c);">
+                                        <i class="fas fa-cube fa-4x" style="color: #818cf8;"></i>
+                                    </div>`
+                                }
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title">${escapeHtml(element.name)}</h5>
+                                <p class="card-text small text-secondary">
+                                    <i class="fas fa-tag"></i> ${escapeHtml(element.category_name)}
+                                </p>
+                            </div>
+                            <div class="card-footer bg-transparent border-0 pb-3">
+                                <div class="btn-group w-100 gap-2">
+                                    <a href="/worlds/{{ world.id }}/elements/${element.id}/" class="btn btn-sm btn-outline-primary rounded-pill">
+                                        <i class="fas fa-eye"></i> Открыть
+                                    </a>
+                                    <a href="/worlds/{{ world.id }}/elements/${element.id}/edit/" class="btn btn-sm btn-outline-secondary rounded-pill">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" onclick="deleteElement(${element.id}, '${escapeHtml(element.name)}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Переинициализируем модальные окна для новых элементов
+                container.querySelectorAll('[data-bs-toggle="modal"]').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const target = document.querySelector(this.dataset.bsTarget);
+                        if (target) {
+                            new bootstrap.Modal(target).show();
+                        }
+                    });
+                });
+            } catch (error) {
+                console.error('Ошибка:', error);
+            }
+        });
+    });
+
+    // Функция для удаления элемента (для динамически созданных кнопок)
+    window.deleteElement = function(elementId, elementName) {
+        if (confirm(`Вы уверены, что хотите удалить элемент "${elementName}"?`)) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/worlds/{{ world.id }}/elements/${elementId}/delete/`;
+            form.innerHTML = '{% csrf_token %}';
+            document.body.appendChild(form);
+            form.submit();
+        }
+    };
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+
+<style>
+    /* Исправление для модальных окон - поверх всего */
+    .modal {
+        z-index: 1055 !important;
+    }
+
+    .modal-backdrop {
+        z-index: 1050 !important;
+    }
+
+    /* Убираем перекрытие от sticky-top */
+    .sticky-top {
+        z-index: 100 !important;
+    }
+
+    .card.shadow.sticky-top {
+        z-index: 100 !important;
+    }
+
+    /* Разрешаем прокрутку страницы при открытом модальном окне */
+    body.modal-open {
+        overflow: auto !important;
+        padding-right: 0 !important;
+    }
+
+    /* Модальное окно не должно обрезаться */
+    .modal-dialog {
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+
+    .modal-content {
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+
+    /* Стили для поиска */
+    .search-box {
+        position: relative;
+    }
+
+    .search-form {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 16px;
+        color: #64748b;
+        font-size: 1rem;
+        pointer-events: none;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 12px 45px 12px 45px;
+        background: rgba(12, 16, 28, 0.7);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(109, 40, 217, 0.3);
+        border-radius: 50px;
+        color: #f1f5f9;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #a78bfa;
+        background: rgba(15, 20, 35, 0.8);
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+    }
+
+    .search-input::placeholder {
+        color: #64748b;
+    }
+
+    .search-clear {
+        position: absolute;
+        right: 16px;
+        color: #64748b;
+        font-size: 1rem;
+        transition: color 0.2s;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        text-decoration: none;
+    }
+
+    .search-clear:hover {
+        color: #f472b6;
+        background: rgba(244, 114, 182, 0.1);
+    }
+
+    /* Стили для ввода иконки */
+    .icon-input-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .icon-preview {
+        width: 48px;
+        height: 48px;
+        background: rgba(10, 14, 23, 0.8);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: #c4b5fd;
+        flex-shrink: 0;
+        transition: all 0.2s;
+    }
+
+    .icon-suggestions {
+        margin-top: 8px;
+    }
+
+    .icon-suggestions-label {
+        display: block;
+        color: #94a3c6;
+        font-size: 0.8rem;
+        margin-bottom: 10px;
+    }
+
+    .icon-grid {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 6px;
+        max-height: 160px;
+        overflow-y: auto;
+        padding: 8px;
+        background: rgba(10, 14, 23, 0.4);
+        border-radius: 14px;
+        border: 1px solid rgba(139, 92, 246, 0.15);
+    }
+
+    .icon-option {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(12, 16, 28, 0.7);
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.15s;
+        color: #94a3c6;
+        font-size: 1rem;
+    }
+
+    .icon-option:hover {
+        background: rgba(109, 40, 217, 0.3);
+        border-color: #a78bfa;
+        color: #c4b5fd;
+        transform: scale(1.05);
+    }
+
+    .icon-option.selected {
+        background: linear-gradient(135deg, #6d28d9, #4c1d95);
+        border-color: #c084fc;
+        color: white;
+    }
+
+    .icon-grid::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .icon-grid::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .icon-grid::-webkit-scrollbar-thumb {
+        background: rgba(139, 92, 246, 0.3);
+        border-radius: 4px;
+    }
+
+    .element-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .element-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+    }
+
+    .category-link-wrapper {
+        display: flex !important;
+        align-items: center;
+        background: transparent !important;
+        border-left: 3px solid transparent;
+        border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+    }
+
+    .category-link-wrapper:hover {
+        background: rgba(109, 40, 217, 0.2) !important;
+        border-left-color: #a78bfa;
+    }
+
+    .category-link {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1rem;
+        color: #cbd5e6 !important;
+        text-decoration: none;
+        flex: 1;
+        background: transparent !important;
+    }
+
+    .category-link.active {
+        background: rgba(109, 40, 217, 0.3) !important;
+        border-left-color: #c084fc;
+        color: #f1f5f9 !important;
+    }
+
+    .category-actions {
+        display: flex;
+        gap: 4px;
+        padding-right: 8px;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .category-link-wrapper:hover .category-actions {
+        opacity: 1;
+    }
+
+    .category-action-btn {
+        padding: 4px 6px;
+        background: transparent;
+        border: none;
+        color: #94a3c6;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: color 0.2s;
+        border-radius: 4px;
+    }
+
+    .category-action-btn:hover {
+        color: #c4b5fd;
+        background: rgba(109, 40, 217, 0.2);
+    }
+
+    .category-action-btn.delete:hover {
+        color: #f472b6;
+        background: rgba(244, 114, 182, 0.2);
+    }
+
+    .badge {
+        background: rgba(109, 40, 217, 0.3);
+        color: #c4b5fd;
+    }
+
+    .card-img-top-wrapper {
+        overflow: hidden;
+        border-radius: 20px 20px 0 0;
+    }
+</style>
+{% endblock %}

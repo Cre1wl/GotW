@@ -1,0 +1,418 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Создание элемента{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'worlds:library' %}">Мои миры</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'worlds:world_detail' world.id %}">{{ world.name }}</a></li>
+                    <li class="breadcrumb-item active">Создание элемента</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow border-0">
+                <div class="card-header text-center py-4" style="background: linear-gradient(135deg, rgba(109, 40, 217, 0.3), rgba(45, 212, 191, 0.15));">
+                    <i class="fas fa-plus-circle fa-3x" style="color: #c084fc;"></i>
+                    <h3 class="mt-2 mb-0" style="color: #f1f5f9;">Создание нового элемента</h3>
+                    <p class="small mt-2" style="color: #94a3c6;">Добавляйте поля любых типов</p>
+                </div>
+
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data" id="elementForm">
+                        {% csrf_token %}
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold" style="color: #cbd5e6;">
+                                <i class="fas fa-tag me-2"></i>Название элемента <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="name" class="form-control form-control-lg" required placeholder="Введите название элемента">
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" style="color: #cbd5e6;">
+                                    <i class="fas fa-folder me-2"></i>Категория <span class="text-danger">*</span>
+                                </label>
+                                <select name="category" class="form-select" required>
+                                    <option value="">Выберите категорию</option>
+                                    {% for category in categories %}
+                                        <option value="{{ category.id }}">{{ category.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold" style="color: #cbd5e6;">
+                                    <i class="fas fa-image me-2"></i>Обложка
+                                </label>
+                                <input type="file" name="cover_image" class="form-control" accept="image/*">
+                                <small class="text-muted">Рекомендуемый размер: 400x300px</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <label class="form-label fw-semibold mb-0" style="color: #cbd5e6;">
+                                    <i class="fas fa-list me-2"></i>Дополнительные поля
+                                </label>
+                            </div>
+                            <div id="fieldsContainer"></div>
+                            <div class="text-center mt-3">
+                                <button type="button" class="btn btn-outline-primary rounded-pill" id="addFieldBottomBtn">
+                                    <i class="fas fa-plus"></i> Добавить ещё поле
+                                </button>
+                            </div>
+                        </div>
+
+                        <hr class="my-4" style="border-color: rgba(139, 92, 246, 0.3);">
+
+                        <div class="d-flex gap-3 justify-content-end">
+                            <a href="{% url 'worlds:world_detail' world.id %}" class="btn btn-secondary btn-lg px-4 rounded-pill">
+                                <i class="fas fa-times"></i> Отмена
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill">
+                                <i class="fas fa-save"></i> Создать элемент
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для просмотра галереи -->
+<div class="modal fade" id="galleryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content" style="background: rgba(10, 14, 23, 0.95); backdrop-filter: blur(10px);">
+            <div class="modal-header border-0">
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="galleryModalImage" src="" alt="" style="max-height: 70vh; max-width: 100%; border-radius: 12px;">
+                <div class="mt-3 d-flex justify-content-center gap-3">
+                    <button class="btn btn-outline-primary rounded-pill" id="galleryPrevBtn">
+                        <i class="fas fa-chevron-left"></i> Предыдущее
+                    </button>
+                    <span id="galleryCounter" class="text-secondary align-self-center"></span>
+                    <button class="btn btn-outline-primary rounded-pill" id="galleryNextBtn">
+                        Следующее <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal fade" id="deleteFieldModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle" style="color: #f472b6;"></i> Удаление поля
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить поле <strong id="deleteFieldName" style="color: #c084fc;"></strong>?</p>
+                <p class="small text-muted">Это действие невозможно отменить.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Отмена
+                </button>
+                <button type="button" class="btn btn-danger rounded-pill" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Удалить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .field-card {
+        background: linear-gradient(135deg, rgba(15, 20, 35, 0.8), rgba(10, 14, 23, 0.9));
+        border: 1px solid rgba(139, 92, 246, 0.25);
+        border-radius: 16px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        transition: all 0.2s;
+    }
+    .field-card:hover {
+        border-color: rgba(139, 92, 246, 0.5);
+    }
+    .breadcrumb {
+        background: transparent;
+        padding: 0;
+    }
+    .breadcrumb-item a {
+        color: #c4b5fd;
+        text-decoration: none;
+    }
+    .form-control, .form-select {
+        background: #0b0e1a;
+        border: 1px solid #2d2f4a;
+        color: #f1f5f9;
+    }
+    .form-control:focus, .form-select:focus {
+        background: #0f1222;
+        border-color: #a78bfa;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+    }
+    .btn-outline-primary {
+        border-color: #a78bfa;
+        color: #c4b5fd;
+    }
+    .btn-outline-primary:hover {
+        background: rgba(109, 40, 217, 0.3);
+        border-color: #c084fc;
+        color: #f1f5f9;
+    }
+    .gallery-thumb {
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    .gallery-thumb:hover {
+        transform: scale(1.05);
+    }
+</style>
+
+<script>
+    let fieldCounter = 0;
+    let currentDeleteField = null;
+    let currentGalleryImages = [];
+    let currentGalleryIndex = 0;
+
+    function addField() {
+        const container = document.getElementById('fieldsContainer');
+        const fieldId = fieldCounter;
+
+        const fieldHtml = `
+            <div class="field-card" data-field-id="${fieldId}">
+                <input type="hidden" name="field_index[]" value="${fieldId}">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="flex-grow-1 me-3">
+                        <input type="text" class="form-control" placeholder="Название поля" name="field_name_${fieldId}" required>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-field" data-field-id="${fieldId}" data-field-name="">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="mb-3">
+                    <label class="small text-muted mb-1">Тип поля</label>
+                    <select class="form-select field-type-select" name="field_type_${fieldId}" data-field-id="${fieldId}">
+                        <option value="text">📝 Текст</option>
+                        <option value="textarea">📄 Многострочный текст</option>
+                        <option value="number">🔢 Число</option>
+                        <option value="checkbox">✅ Чекбокс</option>
+                        <option value="image">🖼️ Изображение</option>
+                        <option value="gallery">🎨 Галерея</option>
+                        <option value="image_with_caption">🖼️ Изображение с подписью</option>
+                        <option value="url">🔗 Ссылка</option>
+                        <option value="color">🎨 Цвет</option>
+                        <option value="date">📅 Дата</option>
+                        <option value="datetime">⏰ Дата и время</option>
+                        <option value="time">⌚ Время</option>
+                        <option value="email">📧 Email</option>
+                        <option value="phone">📞 Телефон</option>
+                        <option value="rating">⭐ Рейтинг (1-5)</option>
+                        <option value="tags">🏷️ Теги</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="small text-muted mb-1">Значение</label>
+                    <div class="field-value-container" data-field-id="${fieldId}">
+                        <input type="text" class="form-control" name="field_value_${fieldId}" placeholder="Введите значение">
+                    </div>
+                </div>
+            </div>
+        `;
+
+        container.insertAdjacentHTML('beforeend', fieldHtml);
+
+        // Обновляем название поля в кнопке удаления
+        const nameInput = document.querySelector(`.field-card[data-field-id="${fieldId}"] input[placeholder="Название поля"]`);
+        const deleteBtn = document.querySelector(`.field-card[data-field-id="${fieldId}"] .remove-field`);
+        nameInput.addEventListener('input', function() {
+            deleteBtn.dataset.fieldName = this.value || 'без названия';
+        });
+
+        fieldCounter++;
+
+        // Обработчик изменения типа поля
+        const typeSelect = document.querySelector(`.field-card[data-field-id="${fieldId}"] .field-type-select`);
+        const valueContainer = document.querySelector(`.field-card[data-field-id="${fieldId}"] .field-value-container`);
+
+        typeSelect.addEventListener('change', function() {
+            const fieldType = this.value;
+            if (fieldType === 'textarea') {
+                valueContainer.innerHTML = `<textarea class="form-control" name="field_value_${fieldId}" rows="3" placeholder="Введите текст..."></textarea>`;
+            } else if (fieldType === 'checkbox') {
+                valueContainer.innerHTML = `<div class="form-check"><input type="checkbox" class="form-check-input" name="field_value_${fieldId}"><label class="form-check-label">Включено</label></div>`;
+            } else if (fieldType === 'image') {
+                valueContainer.innerHTML = `<input type="file" class="form-control" name="field_file_${fieldId}" accept="image/*">`;
+            } else if (fieldType === 'gallery') {
+                valueContainer.innerHTML = `<div id="gallery_${fieldId}"><button type="button" class="btn btn-sm btn-outline-primary mb-2" onclick="addGalleryImage(${fieldId})"><i class="fas fa-plus"></i> Добавить изображение</button><div class="gallery-container" data-field-id="${fieldId}"></div></div>`;
+            } else if (fieldType === 'image_with_caption') {
+                valueContainer.innerHTML = `<input type="file" class="form-control mb-2" name="field_file_${fieldId}" accept="image/*"><input type="text" class="form-control" name="field_caption_${fieldId}" placeholder="Подпись к изображению">`;
+            } else if (fieldType === 'color') {
+                valueContainer.innerHTML = `<input type="color" class="form-control" name="field_value_${fieldId}" value="#6d28d9" style="height: 45px;">`;
+            } else if (fieldType === 'date') {
+                valueContainer.innerHTML = `<input type="date" class="form-control" name="field_value_${fieldId}">`;
+            } else if (fieldType === 'datetime') {
+                valueContainer.innerHTML = `<input type="datetime-local" class="form-control" name="field_value_${fieldId}">`;
+            } else if (fieldType === 'time') {
+                valueContainer.innerHTML = `<input type="time" class="form-control" name="field_value_${fieldId}">`;
+            } else if (fieldType === 'url') {
+                valueContainer.innerHTML = `<input type="url" class="form-control" name="field_value_${fieldId}" placeholder="https://...">`;
+            } else if (fieldType === 'email') {
+                valueContainer.innerHTML = `<input type="email" class="form-control" name="field_value_${fieldId}" placeholder="example@mail.com">`;
+            } else if (fieldType === 'phone') {
+                valueContainer.innerHTML = `<input type="tel" class="form-control" name="field_value_${fieldId}" placeholder="+7 (999) 123-45-67">`;
+            } else if (fieldType === 'number') {
+                valueContainer.innerHTML = `<input type="number" class="form-control" name="field_value_${fieldId}" placeholder="Введите число" step="any">`;
+            } else if (fieldType === 'rating') {
+                valueContainer.innerHTML = `
+                    <div class="rating-stars-create" data-field-id="${fieldId}" data-value="0">
+                        <i class="far fa-star" data-value="1"></i>
+                        <i class="far fa-star" data-value="2"></i>
+                        <i class="far fa-star" data-value="3"></i>
+                        <i class="far fa-star" data-value="4"></i>
+                        <i class="far fa-star" data-value="5"></i>
+                    </div>
+                    <input type="hidden" name="field_value_${fieldId}" value="0">
+                `;
+                initCreateRatingStars(fieldId);
+            } else if (fieldType === 'tags') {
+                valueContainer.innerHTML = `<input type="text" class="form-control" name="field_value_${fieldId}" placeholder="тег1, тег2, тег3">`;
+            } else {
+                valueContainer.innerHTML = `<input type="text" class="form-control" name="field_value_${fieldId}" placeholder="Введите значение">`;
+            }
+        });
+    }
+
+    function initCreateRatingStars(fieldId) {
+        setTimeout(() => {
+            const container = document.querySelector(`.field-card[data-field-id="${fieldId}"] .rating-stars-create`);
+            if (!container) return;
+            const stars = container.querySelectorAll('i');
+            const hiddenInput = container.parentElement.querySelector('input[type="hidden"]');
+
+            stars.forEach(star => {
+                star.style.cursor = 'pointer';
+                star.style.fontSize = '24px';
+                star.style.marginRight = '8px';
+                star.style.transition = 'all 0.2s';
+
+                star.addEventListener('mouseenter', function() {
+                    const value = parseInt(this.dataset.value);
+                    stars.forEach((s, idx) => {
+                        if (idx < value) {
+                            s.classList.remove('far');
+                            s.classList.add('fas');
+                        } else {
+                            s.classList.remove('fas');
+                            s.classList.add('far');
+                        }
+                    });
+                });
+
+                star.addEventListener('mouseleave', function() {
+                    const currentValue = parseInt(hiddenInput.value);
+                    stars.forEach((s, idx) => {
+                        if (idx < currentValue) {
+                            s.classList.remove('far');
+                            s.classList.add('fas');
+                        } else {
+                            s.classList.remove('fas');
+                            s.classList.add('far');
+                        }
+                    });
+                });
+
+                star.addEventListener('click', function() {
+                    const value = parseInt(this.dataset.value);
+                    hiddenInput.value = value;
+                    stars.forEach((s, idx) => {
+                        if (idx < value) {
+                            s.classList.remove('far');
+                            s.classList.add('fas');
+                        } else {
+                            s.classList.remove('fas');
+                            s.classList.add('far');
+                        }
+                    });
+                });
+            });
+        }, 50);
+    }
+
+    window.addGalleryImage = function(fieldId) {
+        const container = document.querySelector(`.field-card[data-field-id="${fieldId}"] .gallery-container`);
+        const imgIndex = Date.now();
+        const inputHtml = `<div class="gallery-item mb-2"><input type="file" class="form-control" name="field_gallery_${fieldId}_${imgIndex}" accept="image/*"><button type="button" class="btn btn-sm btn-danger mt-1" onclick="this.parentElement.remove()">Удалить</button></div>`;
+        container.insertAdjacentHTML('beforeend', inputHtml);
+    };
+
+    // Показ модального окна при удалении
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-field') || e.target.closest('.remove-field')) {
+            const btn = e.target.closest('.remove-field');
+            const fieldCard = btn.closest('.field-card');
+            const fieldName = btn.dataset.fieldName || fieldCard.querySelector('input[placeholder="Название поля"]')?.value || 'это поле';
+
+            currentDeleteField = fieldCard;
+            document.getElementById('deleteFieldName').textContent = fieldName;
+
+            const modal = new bootstrap.Modal(document.getElementById('deleteFieldModal'));
+            modal.show();
+        }
+    });
+
+    // Подтверждение удаления
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+        if (currentDeleteField) {
+            currentDeleteField.remove();
+            currentDeleteField = null;
+        }
+        const modal = bootstrap.Modal.getInstance(document.getElementById('deleteFieldModal'));
+        modal.hide();
+    });
+
+    document.getElementById('addFieldBottomBtn').addEventListener('click', addField);
+
+    // Проверка перед отправкой формы
+    document.getElementById('elementForm').addEventListener('submit', function(e) {
+        let hasError = false;
+        let emptyFields = [];
+
+        document.querySelectorAll('.field-card input[placeholder="Название поля"]').forEach(function(input) {
+            if (!input.value.trim()) {
+                emptyFields.push('Поле без названия');
+                input.style.borderColor = '#f472b6';
+                hasError = true;
+            } else {
+                input.style.borderColor = '';
+            }
+        });
+
+        if (hasError) {
+            e.preventDefault();
+            alert('Пожалуйста, заполните названия всех полей или удалите пустые поля.\n' +
+                  'Найдено пустых полей: ' + emptyFields.length);
+        }
+    });
+
+    // Добавляем одно пустое поле по умолчанию
+    addField();
+</script>
+{% endblock %}

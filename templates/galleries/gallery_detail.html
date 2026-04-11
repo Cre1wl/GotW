@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ gallery.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'worlds:library' %}">Мои миры</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'worlds:world_detail' obj.id %}">{{ obj.name }}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'galleries:gallery_list' gallery.content_type.id gallery.object_id %}">Галереи</a></li>
+            <li class="breadcrumb-item active">{{ gallery.name }}</li>
+        </ol>
+    </nav>
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="display-5 fw-bold">{{ gallery.name }}</h1>
+            <p class="text-muted">{{ gallery.description }}</p>
+        </div>
+        <div class="btn-group">
+            <a href="{% url 'galleries:image_upload' gallery.id %}" class="btn btn-primary">
+                <i class="fas fa-upload"></i> Загрузить
+            </a>
+            <a href="{% url 'galleries:multiple_upload' gallery.id %}" class="btn btn-success">
+                <i class="fas fa-images"></i> Массовая загрузка
+            </a>
+            <a href="{% url 'galleries:gallery_edit' gallery.id %}" class="btn btn-outline-secondary">
+                <i class="fas fa-edit"></i>
+            </a>
+        </div>
+    </div>
+    
+    {% if images %}
+        <div class="row">
+            {% for image in images %}
+                <div class="col-md-4 col-lg-3 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.title }}" style="height: 200px; object-fit: cover;">
+                        <div class="card-body">
+                            <h6 class="card-title">{{ image.title|default:"Без названия" }}</h6>
+                            <p class="card-text small text-muted">{{ image.description|truncatewords:15 }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                {% if image.is_primary %}
+                                    <span class="badge bg-warning">Основное</span>
+                                {% endif %}
+                                <small class="text-muted">{{ image.uploaded_at|date:"d.m.Y" }}</small>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <div class="btn-group w-100">
+                                <a href="{% url 'galleries:image_edit' image.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% if not image.is_primary %}
+                                    <form action="{% url 'galleries:set_primary' image.id %}" method="post" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-warning">
+                                            <i class="fas fa-star"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                                <form action="{% url 'galleries:image_delete' image.id %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить изображение?')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Пагинация -->
+        {% if images.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if images.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ images.previous_page_number }}">Назад</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in images.paginator.page_range %}
+                        <li class="page-item {% if images.number == num %}active{% endif %}">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% endfor %}
+                    
+                    {% if images.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ images.next_page_number }}">Вперед</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+        
+    {% else %}
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-image fa-5x text-muted"></i>
+            </div>
+            <h3 class="mb-3">Нет изображений</h3>
+            <p class="text-muted mb-4">Загрузите первые изображения в галерею</p>
+            <a href="{% url 'galleries:image_upload' gallery.id %}" class="btn btn-primary">
+                <i class="fas fa-upload"></i> Загрузить изображение
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ profile_user.get_full_name|default:profile_user.username }} - Профиль{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <!-- Левая колонка - информация о пользователе -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow border-0">
+                <div class="card-body text-center">
+                    <!-- Аватар -->
+                    <div class="mb-3">
+                        {% if profile_user.avatar %}
+                            <img src="{{ profile_user.avatar.url }}"
+                                 alt="{{ profile_user.username }}"
+                                 class="rounded-circle img-fluid"
+                                 style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #c084fc;">
+                        {% else %}
+                            <div class="rounded-circle d-inline-flex align-items-center justify-content-center"
+                                 style="width: 150px; height: 150px; background: linear-gradient(135deg, #6d28d9, #2dd4bf);">
+                                <i class="fas fa-user fa-4x text-white"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <h3 style="color: #f1f5f9;">{{ profile_user.get_full_name|default:profile_user.username }}</h3>
+                    <p class="text-secondary">@{{ profile_user.username }}</p>
+
+                    {% if is_own_profile %}
+                        <a href="{% url 'users:profile_edit' %}" class="btn btn-primary btn-sm w-100 mb-2 rounded-pill">
+                            <i class="fas fa-edit"></i> Редактировать профиль
+                        </a>
+                        <a href="{% url 'users:password_change' %}" class="btn btn-outline-secondary btn-sm w-100 rounded-pill">
+                            <i class="fas fa-key"></i> Сменить пароль
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Статистика -->
+            <div class="card shadow border-0 mt-4">
+                <div class="card-header" style="background: linear-gradient(135deg, rgba(109, 40, 217, 0.3), rgba(45, 212, 191, 0.15)); border-bottom: 1px solid rgba(139, 92, 246, 0.3);">
+                    <h5 class="mb-0" style="color: #f1f5f9;"><i class="fas fa-chart-line" style="color: #c084fc;"></i> Статистика</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <h3 style="color: #c084fc;">{{ profile_user.worlds_count }}</h3>
+                            <small class="text-secondary">Миров</small>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h3 style="color: #c084fc;">{{ profile_user.elements_count }}</h3>
+                            <small class="text-secondary">Элементов</small>
+                        </div>
+                    </div>
+                    <hr style="border-color: rgba(139, 92, 246, 0.3);">
+                    <div class="small">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-secondary"><i class="fas fa-calendar-alt me-2" style="color: #a78bfa;"></i> Регистрация:</span>
+                            <span style="color: #f1f5f9;">{{ profile_user.date_joined|date:"d.m.Y H:i" }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-secondary"><i class="fas fa-clock me-2" style="color: #a78bfa;"></i> Последняя активность:</span>
+                            <div>
+                                {% if profile_user.is_online %}
+                                    <span class="badge" style="background: rgba(45, 212, 191, 0.2); color: #2dd4bf;">
+                                        <i class="fas fa-circle me-1" style="font-size: 8px;"></i> Онлайн
+                                    </span>
+                                {% else %}
+                                    <span class="text-secondary">{{ profile_user.last_activity|date:"d.m.Y H:i" }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая колонка - информация и миры (остаётся без изменений) -->
+        <div class="col-md-8">
+            <!-- Информация о пользователе -->
+            <div class="card shadow border-0 mb-4">
+                <div class="card-header" style="background: linear-gradient(135deg, rgba(109, 40, 217, 0.3), rgba(45, 212, 191, 0.15)); border-bottom: 1px solid rgba(139, 92, 246, 0.3);">
+                    <h5 class="mb-0" style="color: #f1f5f9;"><i class="fas fa-info-circle" style="color: #c084fc;"></i> Информация</h5>
+                </div>
+                <div class="card-body">
+                    {% if profile_user.bio %}
+                        <div class="mb-3">
+                            <strong style="color: #cbd5e6;"><i class="fas fa-align-left me-2" style="color: #a78bfa;"></i> О себе:</strong>
+                            <p class="mt-2 text-secondary" style="white-space: pre-wrap; word-wrap: break-word;">{{ profile_user.bio }}</p>
+                        </div>
+                    {% endif %}
+
+                    <div class="row">
+                        {% if profile_user.location %}
+                            <div class="col-md-6 mb-2">
+                                <i class="fas fa-map-marker-alt me-2" style="color: #a78bfa;"></i>
+                                <strong style="color: #cbd5e6;">Местоположение:</strong> <span class="text-secondary">{{ profile_user.location }}</span>
+                            </div>
+                        {% endif %}
+
+                        {% if profile_user.website %}
+                            <div class="col-md-6 mb-2">
+                                <i class="fas fa-globe me-2" style="color: #a78bfa;"></i>
+                                <strong style="color: #cbd5e6;">Сайт:</strong> <a href="{{ profile_user.website }}" target="_blank" style="color: #c084fc;">{{ profile_user.website }}</a>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Социальные сети -->
+                    {% if profile_user.telegram or profile_user.github or profile_user.twitter %}
+                        <hr style="border-color: rgba(139, 92, 246, 0.3);">
+                        <div class="social-links">
+                            <strong style="color: #cbd5e6;">Социальные сети:</strong>
+                            <div class="mt-2 d-flex flex-wrap gap-2">
+                                {% if profile_user.telegram %}
+                                    <a href="https://t.me/{{ profile_user.telegram }}" target="_blank" class="btn btn-sm rounded-pill" style="background: rgba(45, 212, 191, 0.15); border: 1px solid #2dd4bf; color: #2dd4bf;">
+                                        <i class="fab fa-telegram"></i> Telegram
+                                    </a>
+                                {% endif %}
+
+                                {% if profile_user.github %}
+                                    <a href="https://github.com/{{ profile_user.github }}" target="_blank" class="btn btn-sm rounded-pill" style="background: rgba(139, 92, 246, 0.15); border: 1px solid #a78bfa; color: #c4b5fd;">
+                                        <i class="fab fa-github"></i> GitHub
+                                    </a>
+                                {% endif %}
+
+                                {% if profile_user.twitter %}
+                                    <a href="https://twitter.com/{{ profile_user.twitter }}" target="_blank" class="btn btn-sm rounded-pill" style="background: rgba(56, 161, 243, 0.15); border: 1px solid #38a1f3; color: #38a1f3;">
+                                        <i class="fab fa-twitter"></i> Twitter
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Миры пользователя (оставляем как было) -->
+            <div class="card shadow border-0">
+                <div class="card-header" style="background: linear-gradient(135deg, rgba(109, 40, 217, 0.3), rgba(45, 212, 191, 0.15)); border-bottom: 1px solid rgba(139, 92, 246, 0.3);">
+                    <h5 class="mb-0" style="color: #f1f5f9;"><i class="fas fa-globe" style="color: #c084fc;"></i> Миры</h5>
+                </div>
+                <div class="card-body">
+                    {% if worlds %}
+                        <div class="row g-3">
+                            {% for world in worlds %}
+                                <div class="col-md-6">
+                                    <div class="card h-100 border-0" style="background: rgba(10, 14, 23, 0.5); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 16px;">
+                                        {% if world.cover_image %}
+                                            <img src="{{ world.cover_image.url }}" class="card-img-top" alt="{{ world.name }}"
+                                                 style="height: 120px; object-fit: cover; border-radius: 16px 16px 0 0;">
+                                        {% else %}
+                                            <div class="card-img-top d-flex align-items-center justify-content-center"
+                                                 style="height: 120px; background: linear-gradient(145deg, #1e1b3a, #0b0e1c); border-radius: 16px 16px 0 0;">
+                                                <i class="fas fa-globe fa-3x" style="color: #818cf8;"></i>
+                                            </div>
+                                        {% endif %}
+                                        <div class="card-body">
+                                            <h6 class="card-title" style="color: #f1f5f9;">{{ world.name }}</h6>
+                                            <p class="card-text small text-secondary">{{ world.description|truncatewords:15|default:"Нет описания" }}</p>
+                                            <div class="text-secondary small">
+                                                <i class="fas fa-calendar-alt me-1"></i> {{ world.created_at|date:"d.m.Y" }}
+                                            </div>
+                                        </div>
+                                        <div class="card-footer bg-transparent border-0 pb-3">
+                                            <a href="{% url 'worlds:world_detail' world.id %}" class="btn btn-sm btn-outline-primary rounded-pill w-100">
+                                                <i class="fas fa-eye"></i> Перейти
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Пагинация -->
+                        {% if worlds.has_other_pages %}
+                            <nav aria-label="Page navigation" class="mt-4">
+                                <ul class="pagination justify-content-center">
+                                    {% if worlds.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link rounded-pill" href="?page={{ worlds.previous_page_number }}">
+                                                <i class="fas fa-chevron-left"></i> Назад
+                                            </a>
+                                        </li>
+                                    {% endif %}
+
+                                    {% for num in worlds.paginator.page_range %}
+                                        <li class="page-item {% if worlds.number == num %}active{% endif %}">
+                                            <a class="page-link rounded-pill" href="?page={{ num }}">{{ num }}</a>
+                                        </li>
+                                    {% endfor %}
+
+                                    {% if worlds.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link rounded-pill" href="?page={{ worlds.next_page_number }}">
+                                                Вперед <i class="fas fa-chevron-right"></i>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-frown fa-3x" style="color: #64748b;"></i>
+                            <p class="text-secondary mt-2">Нет созданных миров</p>
+                            {% if is_own_profile %}
+                                <a href="{% url 'worlds:world_create' %}" class="btn btn-primary rounded-pill">
+                                    <i class="fas fa-plus"></i> Создать первый мир
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        background: rgba(12, 16, 28, 0.85);
+        backdrop-filter: blur(8px);
+        border-radius: 20px;
+    }
+    .page-link {
+        margin: 0 4px;
+    }
+    .btn-outline-primary {
+        border-color: #a78bfa;
+        color: #c4b5fd;
+    }
+    .btn-outline-primary:hover {
+        background: rgba(109, 40, 217, 0.3);
+        border-color: #c084fc;
+        color: #f1f5f9;
+    }
+</style>
+{% endblock %}

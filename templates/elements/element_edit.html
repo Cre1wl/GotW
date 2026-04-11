@@ -1,0 +1,621 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load element_filters %}
+
+{% block title %}Редактирование - {{ element.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb" style="background: rgba(12, 16, 28, 0.6); padding: 0.75rem 1rem; border-radius: 50px;">
+            <li class="breadcrumb-item"><a href="{% url 'worlds:library' %}" style="color: #a78bfa;">Мои миры</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'worlds:world_detail' world.id %}" style="color: #a78bfa;">{{ world.name }}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'elements:element_detail' world.id element.id %}" style="color: #a78bfa;">{{ element.name }}</a></li>
+            <li class="breadcrumb-item active" style="color: #cbd5e6;">Редактирование</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow border-0">
+                <div class="card-header text-center py-4" style="background: linear-gradient(135deg, rgba(109, 40, 217, 0.3), rgba(45, 212, 191, 0.15));">
+                    <i class="fas fa-edit fa-3x" style="color: #c084fc;"></i>
+                    <h3 class="mt-2 mb-0" style="color: #f1f5f9;">Редактирование элемента</h3>
+                    <p class="small mt-2" style="color: #94a3c6;">Измените существующие поля или добавьте новые</p>
+                </div>
+
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data" id="elementForm">
+                        {% csrf_token %}
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold" style="color: #cbd5e6;">
+                                <i class="fas fa-tag me-2"></i>Название элемента <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="name" class="form-control form-control-lg" value="{{ element.name }}" required>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold" style="color: #cbd5e6;">
+                                <i class="fas fa-image me-2"></i>Обложка
+                            </label>
+                            {% with cover=element.data|get_item:'_cover' %}
+                                {% if cover %}
+                                    <div class="mb-2">
+                                        <img src="{{ cover }}" style="max-height: 100px; border-radius: 8px;">
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                            <input type="file" name="cover_image" class="form-control" accept="image/*">
+                            <small class="text-muted">Оставьте пустым, чтобы сохранить текущую обложку</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0" style="color: #c4b5fd;"><i class="fas fa-list"></i> Существующие поля</h5>
+                            </div>
+                            {% for field_key, field_config in element.fields_schema.items %}
+                                <div class="field-edit-card mb-3" data-field-key="{{ field_key }}">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="field-header">
+                                            <i class="fas fa-cube" style="color: #c084fc;"></i>
+                                            <label class="field-label">{{ field_config.name }}</label>
+                                            <span class="field-type-badge">{{ field_config.type|default:"text" }}</span>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-existing-field" data-field-key="{{ field_key }}" data-field-name="{{ field_config.name }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                    <div class="field-edit-value">
+                                        {% with value=element.data|get_item:field_key %}
+                                            {% if field_config.type == 'textarea' %}
+                                                <textarea name="field_{{ field_key }}" class="form-control" rows="3">{{ value|default:'' }}</textarea>
+
+                                            {% elif field_config.type == 'checkbox' %}
+                                                <div class="form-check">
+                                                    <input type="checkbox" name="field_{{ field_key }}" class="form-check-input" {% if value %}checked{% endif %}>
+                                                    <label class="form-check-label">Включено</label>
+                                                </div>
+
+                                            {% elif field_config.type == 'image' %}
+                                                {% if value %}
+                                                    <div class="mb-2">
+                                                        <img src="{{ value }}" style="max-height: 100px; border-radius: 8px;">
+                                                    </div>
+                                                {% endif %}
+                                                <input type="file" name="field_file_{{ field_key }}" class="form-control" accept="image/*">
+
+                                            {% elif field_config.type == 'gallery' %}
+                                                <div class="gallery-edit-container mb-2">
+                                                    {% if value %}
+                                                        <div class="gallery-grid">
+                                                            {% for img in value %}
+                                                                <div class="gallery-thumb-wrapper d-inline-block me-2 mb-2">
+                                                                    <img src="{{ img }}" class="gallery-thumb" style="max-height: 80px; border-radius: 8px; cursor: pointer;">
+                                                                </div>
+                                                            {% endfor %}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                                <button type="button" class="btn btn-sm btn-outline-primary mb-2" onclick="addEditGalleryImage('{{ field_key }}')">
+                                                    <i class="fas fa-plus"></i> Добавить изображение
+                                                </button>
+                                                <div id="gallery_{{ field_key }}"></div>
+
+                                            {% elif field_config.type == 'image_with_caption' %}
+                                                {% if value.image %}
+                                                    <div class="mb-2">
+                                                        <img src="{{ value.image }}" style="max-height: 100px; border-radius: 8px;">
+                                                    </div>
+                                                {% endif %}
+                                                <input type="file" name="field_file_{{ field_key }}" class="form-control mb-2" accept="image/*">
+                                                <input type="text" name="field_caption_{{ field_key }}" class="form-control" placeholder="Подпись" value="{{ value.caption|default:'' }}">
+
+                                            {% elif field_config.type == 'color' %}
+                                                <input type="color" name="field_{{ field_key }}" class="form-control" value="{{ value|default:'#6d28d9' }}" style="height: 50px;">
+
+                                            {% elif field_config.type == 'date' %}
+                                                <input type="date" name="field_{{ field_key }}" class="form-control" value="{{ value|default:'' }}">
+
+                                            {% elif field_config.type == 'datetime' %}
+                                                <input type="datetime-local" name="field_{{ field_key }}" class="form-control" value="{{ value|default:'' }}">
+
+                                            {% elif field_config.type == 'time' %}
+                                                <input type="time" name="field_{{ field_key }}" class="form-control" value="{{ value|default:'' }}">
+
+                                            {% elif field_config.type == 'number' %}
+                                                <input type="number" name="field_{{ field_key }}" class="form-control" value="{{ value|default:'' }}" step="any" placeholder="Введите число">
+
+                                            {% elif field_config.type == 'url' %}
+                                                <input type="url" name="field_{{ field_key }}" class="form-control" value="{{ value|default:'' }}" placeholder="https://...">
+
+                                            {% elif field_config.type == 'email' %}
+                                                <input type="email" name="field_{{ field_key }}" class="form-control" value="{{ value|default:'' }}" placeholder="example@mail.com">
+
+                                            {% elif field_config.type == 'phone' %}
+                                                <input type="tel" name="field_{{ field_key }}" class="form-control" value="{{ value|default:'' }}" placeholder="+7 (999) 123-45-67">
+
+                                            {% elif field_config.type == 'rating' %}
+                                                <div class="rating-edit" data-field-key="{{ field_key }}" data-value="{{ value|default:0 }}">
+                                                    <i class="{% if 1 <= value|default:0 %}fas{% else %}far{% endif %} fa-star" data-value="1"></i>
+                                                    <i class="{% if 2 <= value|default:0 %}fas{% else %}far{% endif %} fa-star" data-value="2"></i>
+                                                    <i class="{% if 3 <= value|default:0 %}fas{% else %}far{% endif %} fa-star" data-value="3"></i>
+                                                    <i class="{% if 4 <= value|default:0 %}fas{% else %}far{% endif %} fa-star" data-value="4"></i>
+                                                    <i class="{% if 5 <= value|default:0 %}fas{% else %}far{% endif %} fa-star" data-value="5"></i>
+                                                </div>
+                                                <input type="hidden" name="field_{{ field_key }}" id="rating_{{ field_key }}" value="{{ value|default:0 }}">
+
+                                            {% elif field_config.type == 'tags' %}
+                                                <input type="text" name="field_{{ field_key }}" class="form-control" value="{{ value|join:', ' }}" placeholder="тег1, тег2, тег3">
+
+                                            {% else %}
+                                                <input type="text" name="field_{{ field_key }}" class="form-control" value="{{ value|default:'' }}">
+                                            {% endif %}
+                                        {% endwith %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0" style="color: #c4b5fd;"><i class="fas fa-plus-circle"></i> Добавить новые поля</h5>
+                            </div>
+                            <div id="newFieldsContainer"></div>
+                            <div class="text-center mt-3">
+                                <button type="button" class="btn btn-outline-primary rounded-pill" id="addNewFieldBottomBtn">
+                                    <i class="fas fa-plus"></i> Добавить ещё поле
+                                </button>
+                            </div>
+                        </div>
+
+                        <hr class="my-4" style="border-color: rgba(139, 92, 246, 0.3);">
+
+                        <div class="d-flex gap-3 justify-content-end">
+                            <a href="{% url 'elements:element_detail' world.id element.id %}" class="btn btn-secondary btn-lg px-4 rounded-pill">
+                                <i class="fas fa-times"></i> Отмена
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill">
+                                <i class="fas fa-save"></i> Сохранить изменения
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для просмотра галереи -->
+<div class="modal fade" id="galleryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content" style="background: rgba(10, 14, 23, 0.95); backdrop-filter: blur(10px);">
+            <div class="modal-header border-0">
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="galleryModalImage" src="" alt="" style="max-height: 70vh; max-width: 100%; border-radius: 12px;">
+                <div class="mt-3 d-flex justify-content-center gap-3">
+                    <button class="btn btn-outline-primary rounded-pill" id="galleryPrevBtn">
+                        <i class="fas fa-chevron-left"></i> Предыдущее
+                    </button>
+                    <span id="galleryCounter" class="text-secondary align-self-center"></span>
+                    <button class="btn btn-outline-primary rounded-pill" id="galleryNextBtn">
+                        Следующее <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal fade" id="deleteFieldModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle" style="color: #f472b6;"></i> Удаление поля
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить поле <strong id="deleteFieldName" style="color: #c084fc;"></strong>?</p>
+                <p class="small text-muted">Это действие невозможно отменить.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Отмена
+                </button>
+                <button type="button" class="btn btn-danger rounded-pill" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Удалить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .field-edit-card {
+        background: rgba(10, 14, 23, 0.5);
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.2s;
+    }
+    .field-edit-card:hover {
+        border-color: rgba(139, 92, 246, 0.4);
+    }
+    .field-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .field-label {
+        font-weight: 600;
+        color: #c4b5fd;
+        margin: 0;
+    }
+    .field-type-badge {
+        font-size: 0.7rem;
+        background: rgba(45, 212, 191, 0.2);
+        padding: 2px 8px;
+        border-radius: 20px;
+        color: #5eead4;
+    }
+    .rating-edit i {
+        font-size: 28px;
+        cursor: pointer;
+        color: #ffc107;
+        margin-right: 8px;
+        transition: transform 0.1s;
+    }
+    .rating-edit i:hover {
+        transform: scale(1.1);
+    }
+    .form-control, .form-select {
+        background: #0b0e1a;
+        border: 1px solid #2d2f4a;
+        color: #f1f5f9;
+    }
+    .form-control:focus, .form-select:focus {
+        background: #0f1222;
+        border-color: #a78bfa;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+    }
+    .btn-outline-primary {
+        border-color: #a78bfa;
+        color: #c4b5fd;
+    }
+    .btn-outline-primary:hover {
+        background: rgba(109, 40, 217, 0.3);
+        border-color: #c084fc;
+        color: #f1f5f9;
+    }
+    .btn-outline-danger {
+        border-color: #f472b6;
+        color: #f472b6;
+    }
+    .btn-outline-danger:hover {
+        background: rgba(244, 114, 182, 0.2);
+        border-color: #f472b6;
+        color: #f472b6;
+    }
+    .gallery-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .gallery-thumb {
+        cursor: pointer;
+        transition: transform 0.2s;
+        max-height: 80px;
+        border-radius: 8px;
+    }
+    .gallery-thumb:hover {
+        transform: scale(1.05);
+    }
+    input[type="number"] {
+        -moz-appearance: textfield;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        opacity: 0.5;
+    }
+</style>
+
+<script>
+    let newFieldCounter = 0;
+    let currentDeleteFieldKey = null;
+    let currentGalleryImages = [];
+    let currentGalleryIndex = 0;
+
+    function addNewField() {
+        const container = document.getElementById('newFieldsContainer');
+        const fieldId = newFieldCounter;
+
+        const fieldHtml = `
+            <div class="field-edit-card mb-3" data-new-field-id="${fieldId}">
+                <input type="hidden" name="new_field_index[]" value="${fieldId}">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="flex-grow-1 me-3">
+                        <input type="text" class="form-control" placeholder="Название поля" name="new_field_name_${fieldId}" required>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-new-field" data-field-id="${fieldId}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="mb-3">
+                    <label class="small text-muted mb-1">Тип поля</label>
+                    <select class="form-select new-field-type-select" name="new_field_type_${fieldId}" data-field-id="${fieldId}">
+                        <option value="text">📝 Текст</option>
+                        <option value="textarea">📄 Многострочный текст</option>
+                        <option value="number">🔢 Число</option>
+                        <option value="checkbox">✅ Чекбокс</option>
+                        <option value="image">🖼️ Изображение</option>
+                        <option value="gallery">🎨 Галерея</option>
+                        <option value="image_with_caption">🖼️ Изображение с подписью</option>
+                        <option value="url">🔗 Ссылка</option>
+                        <option value="color">🎨 Цвет</option>
+                        <option value="date">📅 Дата</option>
+                        <option value="datetime">⏰ Дата и время</option>
+                        <option value="time">⌚ Время</option>
+                        <option value="email">📧 Email</option>
+                        <option value="phone">📞 Телефон</option>
+                        <option value="rating">⭐ Рейтинг (1-5)</option>
+                        <option value="tags">🏷️ Теги</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="small text-muted mb-1">Значение</label>
+                    <div class="new-field-value-container" data-field-id="${fieldId}">
+                        <input type="text" class="form-control" name="new_field_value_${fieldId}" placeholder="Введите значение">
+                    </div>
+                </div>
+            </div>
+        `;
+
+        container.insertAdjacentHTML('beforeend', fieldHtml);
+        newFieldCounter++;
+
+        const typeSelect = document.querySelector(`.field-edit-card[data-new-field-id="${fieldId}"] .new-field-type-select`);
+        const valueContainer = document.querySelector(`.field-edit-card[data-new-field-id="${fieldId}"] .new-field-value-container`);
+
+        typeSelect.addEventListener('change', function() {
+            const fieldType = this.value;
+            if (fieldType === 'textarea') {
+                valueContainer.innerHTML = `<textarea class="form-control" name="new_field_value_${fieldId}" rows="3" placeholder="Введите текст..."></textarea>`;
+            } else if (fieldType === 'checkbox') {
+                valueContainer.innerHTML = `<div class="form-check"><input type="checkbox" class="form-check-input" name="new_field_value_${fieldId}"><label class="form-check-label">Включено</label></div>`;
+            } else if (fieldType === 'image') {
+                valueContainer.innerHTML = `<input type="file" class="form-control" name="new_field_file_${fieldId}" accept="image/*">`;
+            } else if (fieldType === 'gallery') {
+                valueContainer.innerHTML = `<div id="new_gallery_${fieldId}"><button type="button" class="btn btn-sm btn-outline-primary mb-2" onclick="addNewGalleryImage(${fieldId})"><i class="fas fa-plus"></i> Добавить изображение</button><div class="gallery-container" data-field-id="${fieldId}"></div></div>`;
+            } else if (fieldType === 'image_with_caption') {
+                valueContainer.innerHTML = `<input type="file" class="form-control mb-2" name="new_field_file_${fieldId}" accept="image/*"><input type="text" class="form-control" name="new_field_caption_${fieldId}" placeholder="Подпись к изображению">`;
+            } else if (fieldType === 'color') {
+                valueContainer.innerHTML = `<input type="color" class="form-control" name="new_field_value_${fieldId}" value="#6d28d9" style="height: 45px;">`;
+            } else if (fieldType === 'date') {
+                valueContainer.innerHTML = `<input type="date" class="form-control" name="new_field_value_${fieldId}">`;
+            } else if (fieldType === 'datetime') {
+                valueContainer.innerHTML = `<input type="datetime-local" class="form-control" name="new_field_value_${fieldId}">`;
+            } else if (fieldType === 'time') {
+                valueContainer.innerHTML = `<input type="time" class="form-control" name="new_field_value_${fieldId}">`;
+            } else if (fieldType === 'number') {
+                valueContainer.innerHTML = `<input type="number" class="form-control" name="new_field_value_${fieldId}" placeholder="Введите число" step="any">`;
+            } else if (fieldType === 'rating') {
+                valueContainer.innerHTML = `
+                    <div class="rating-stars-new" data-field-id="${fieldId}" data-value="0">
+                        <i class="far fa-star" data-value="1"></i>
+                        <i class="far fa-star" data-value="2"></i>
+                        <i class="far fa-star" data-value="3"></i>
+                        <i class="far fa-star" data-value="4"></i>
+                        <i class="far fa-star" data-value="5"></i>
+                    </div>
+                    <input type="hidden" name="new_field_value_${fieldId}" value="0">
+                `;
+                initNewRatingStars(fieldId);
+            } else if (fieldType === 'tags') {
+                valueContainer.innerHTML = `<input type="text" class="form-control" name="new_field_value_${fieldId}" placeholder="тег1, тег2, тег3">`;
+            } else {
+                valueContainer.innerHTML = `<input type="text" class="form-control" name="new_field_value_${fieldId}" placeholder="Введите значение">`;
+            }
+        });
+    }
+
+    function initNewRatingStars(fieldId) {
+        setTimeout(() => {
+            const container = document.querySelector(`.field-edit-card[data-new-field-id="${fieldId}"] .rating-stars-new`);
+            if (!container) return;
+            const stars = container.querySelectorAll('i');
+            const hiddenInput = container.parentElement.querySelector('input[type="hidden"]');
+
+            stars.forEach(star => {
+                star.style.cursor = 'pointer';
+                star.style.fontSize = '28px';
+                star.style.marginRight = '8px';
+                star.style.transition = 'all 0.2s';
+
+                star.addEventListener('mouseenter', function() {
+                    const value = parseInt(this.dataset.value);
+                    stars.forEach((s, idx) => {
+                        if (idx < value) {
+                            s.classList.remove('far');
+                            s.classList.add('fas');
+                        } else {
+                            s.classList.remove('fas');
+                            s.classList.add('far');
+                        }
+                    });
+                });
+
+                star.addEventListener('mouseleave', function() {
+                    const currentValue = parseInt(hiddenInput.value);
+                    stars.forEach((s, idx) => {
+                        if (idx < currentValue) {
+                            s.classList.remove('far');
+                            s.classList.add('fas');
+                        } else {
+                            s.classList.remove('fas');
+                            s.classList.add('far');
+                        }
+                    });
+                });
+
+                star.addEventListener('click', function() {
+                    const value = parseInt(this.dataset.value);
+                    hiddenInput.value = value;
+                    stars.forEach((s, idx) => {
+                        if (idx < value) {
+                            s.classList.remove('far');
+                            s.classList.add('fas');
+                        } else {
+                            s.classList.remove('fas');
+                            s.classList.add('far');
+                        }
+                    });
+                });
+            });
+        }, 50);
+    }
+
+    window.addNewGalleryImage = function(fieldId) {
+        const container = document.querySelector(`.field-edit-card[data-new-field-id="${fieldId}"] .gallery-container`);
+        const imgIndex = Date.now();
+        const inputHtml = `<div class="gallery-item mb-2"><input type="file" class="form-control" name="new_field_gallery_${fieldId}_${imgIndex}" accept="image/*"><button type="button" class="btn btn-sm btn-danger mt-1" onclick="this.parentElement.remove()">Удалить</button></div>`;
+        container.insertAdjacentHTML('beforeend', inputHtml);
+    };
+
+    window.addEditGalleryImage = function(fieldKey) {
+        const container = document.getElementById(`gallery_${fieldKey}`);
+        const imgIndex = Date.now();
+        const inputHtml = `<div class="gallery-item mb-2"><input type="file" class="form-control" name="field_gallery_${fieldKey}_${imgIndex}" accept="image/*"><button type="button" class="btn btn-sm btn-danger mt-1" onclick="this.parentElement.remove()">Удалить</button></div>`;
+        container.insertAdjacentHTML('beforeend', inputHtml);
+    };
+
+    // Просмотр галереи
+    function openGallery(images, index) {
+        currentGalleryImages = images;
+        currentGalleryIndex = index;
+        updateGalleryModal();
+        const modal = new bootstrap.Modal(document.getElementById('galleryModal'));
+        modal.show();
+    }
+
+    function updateGalleryModal() {
+        const img = document.getElementById('galleryModalImage');
+        const counter = document.getElementById('galleryCounter');
+        if (currentGalleryImages.length > 0) {
+            img.src = currentGalleryImages[currentGalleryIndex];
+            counter.textContent = `${currentGalleryIndex + 1} / ${currentGalleryImages.length}`;
+        }
+    }
+
+    document.getElementById('galleryPrevBtn')?.addEventListener('click', function() {
+        if (currentGalleryImages.length > 0) {
+            currentGalleryIndex = (currentGalleryIndex - 1 + currentGalleryImages.length) % currentGalleryImages.length;
+            updateGalleryModal();
+        }
+    });
+
+    document.getElementById('galleryNextBtn')?.addEventListener('click', function() {
+        if (currentGalleryImages.length > 0) {
+            currentGalleryIndex = (currentGalleryIndex + 1) % currentGalleryImages.length;
+            updateGalleryModal();
+        }
+    });
+
+    // Обработчики удаления
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-existing-field') || e.target.closest('.remove-existing-field')) {
+            const btn = e.target.closest('.remove-existing-field');
+            currentDeleteFieldKey = btn.dataset.fieldKey;
+            document.getElementById('deleteFieldName').textContent = btn.dataset.fieldName;
+            const modal = new bootstrap.Modal(document.getElementById('deleteFieldModal'));
+            modal.show();
+        }
+        if (e.target.classList.contains('remove-new-field') || e.target.closest('.remove-new-field')) {
+            const btn = e.target.closest('.remove-new-field');
+            const fieldId = btn.dataset.fieldId;
+            document.querySelector(`.field-edit-card[data-new-field-id="${fieldId}"]`).remove();
+        }
+        // Клик по миниатюре галереи
+        if (e.target.classList.contains('gallery-thumb')) {
+            const container = e.target.closest('.gallery-grid');
+            if (container) {
+                const images = Array.from(container.querySelectorAll('.gallery-thumb')).map(img => img.src);
+                const index = images.indexOf(e.target.src);
+                openGallery(images, index);
+            }
+        }
+    });
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+        if (currentDeleteFieldKey) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.innerHTML = `{% csrf_token %}<input type="hidden" name="delete_field" value="${currentDeleteFieldKey}">`;
+            document.body.appendChild(form);
+            form.submit();
+        }
+        const modal = bootstrap.Modal.getInstance(document.getElementById('deleteFieldModal'));
+        modal.hide();
+    });
+
+    document.getElementById('addNewFieldBottomBtn').addEventListener('click', addNewField);
+
+    // Инициализация существующих рейтингов
+    document.querySelectorAll('.rating-edit').forEach(container => {
+        const stars = container.querySelectorAll('i');
+        const hiddenInput = document.getElementById(`rating_${container.dataset.fieldKey}`);
+
+        stars.forEach(star => {
+            star.style.cursor = 'pointer';
+            star.style.fontSize = '28px';
+            star.style.marginRight = '8px';
+
+            star.addEventListener('mouseenter', function() {
+                const value = parseInt(this.dataset.value);
+                stars.forEach((s, idx) => {
+                    if (idx < value) {
+                        s.classList.remove('far');
+                        s.classList.add('fas');
+                    } else {
+                        s.classList.remove('fas');
+                        s.classList.add('far');
+                    }
+                });
+            });
+
+            star.addEventListener('mouseleave', function() {
+                const currentValue = parseInt(hiddenInput.value);
+                stars.forEach((s, idx) => {
+                    if (idx < currentValue) {
+                        s.classList.remove('far');
+                        s.classList.add('fas');
+                    } else {
+                        s.classList.remove('fas');
+                        s.classList.add('far');
+                    }
+                });
+            });
+
+            star.addEventListener('click', function() {
+                const value = parseInt(this.dataset.value);
+                hiddenInput.value = value;
+                stars.forEach((s, idx) => {
+                    if (idx < value) {
+                        s.classList.remove('far');
+                        s.classList.add('fas');
+                    } else {
+                        s.classList.remove('fas');
+                        s.classList.add('far');
+                    }
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

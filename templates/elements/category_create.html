@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Создание элемента{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'worlds:library' %}">Мои миры</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'worlds:world_detail' world.id %}">{{ world.name }}</a></li>
+                    <li class="breadcrumb-item active">Создание элемента</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow">
+                <div class="card-header" style="background: linear-gradient(135deg, rgba(109, 40, 217, 0.3), rgba(45, 212, 191, 0.15));">
+                    <h4 class="mb-0" style="color: #f1f5f9;">
+                        <i class="fas fa-plus-circle" style="color: #c084fc;"></i> Создание нового элемента
+                    </h4>
+                    <p class="small mt-1" style="color: #94a3c6;">Добавьте поля любого типа — текст, изображения, даты и другое</p>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="elementForm">
+                        {% csrf_token %}
+
+                        <!-- Основная информация -->
+                        <div class="mb-4">
+                            <label class="form-label" style="color: #cbd5e6;">Название элемента *</label>
+                            <input type="text" name="name" class="form-control" required placeholder="Введите название">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label" style="color: #cbd5e6;">Категория *</label>
+                            <select name="category" class="form-select" required>
+                                <option value="">Выберите категорию</option>
+                                {% for category in categories %}
+                                    <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ category.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Динамические поля -->
+                        <div class="mb-4">
+                            <label class="form-label" style="color: #cbd5e6;">Поля элемента</label>
+                            <div id="fieldsContainer">
+                                <div class="field-template d-none">
+                                    <div class="field-item card mb-3">
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-4 mb-2">
+                                                    <input type="text" class="form-control" placeholder="Название поля" name="field_names[]">
+                                                </div>
+                                                <div class="col-md-3 mb-2">
+                                                    <input type="text" class="form-control" placeholder="Подпись (опционально)" name="field_labels[]">
+                                                </div>
+                                                <div class="col-md-3 mb-2">
+                                                    <select class="form-select" name="field_types[]">
+                                                        <option value="text">Текст</option>
+                                                        <option value="textarea">Многострочный текст</option>
+                                                        <option value="number">Число</option>
+                                                        <option value="date">Дата</option>
+                                                        <option value="datetime">Дата и время</option>
+                                                        <option value="boolean">Чекбокс (Да/Нет)</option>
+                                                        <option value="select">Выбор из списка</option>
+                                                        <option value="image">Изображение</option>
+                                                        <option value="file">Файл</option>
+                                                        <option value="url">Ссылка</option>
+                                                        <option value="color">Цвет</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-2 mb-2">
+                                                    <div class="form-check mt-2">
+                                                        <input type="checkbox" class="form-check-input" name="field_required[]">
+                                                        <label class="form-check-label">Обязательное</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <input type="text" class="form-control mt-2" placeholder="Значение (опционально)" name="field_values[]">
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-danger mt-2 remove-field">
+                                                <i class="fas fa-trash"></i> Удалить поле
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary" id="addFieldBtn">
+                                <i class="fas fa-plus"></i> Добавить поле
+                            </button>
+                        </div>
+
+                        <hr style="border-color: rgba(139, 92, 246, 0.3);">
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Создать элемент
+                            </button>
+                            <a href="{% url 'worlds:world_detail' world.id %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Отмена
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('addFieldBtn').addEventListener('click', function() {
+        const template = document.querySelector('.field-template');
+        const clone = template.cloneNode(true);
+        clone.classList.remove('field-template', 'd-none');
+        clone.querySelectorAll('input, select, textarea').forEach(el => {
+            if (el.type !== 'checkbox') el.value = '';
+            else el.checked = false;
+        });
+        document.getElementById('fieldsContainer').appendChild(clone);
+    });
+
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-field')) {
+            e.target.closest('.field-item').remove();
+        }
+    });
+</script>
+
+<style>
+    .breadcrumb {
+        background: transparent;
+        padding: 0;
+    }
+    .breadcrumb-item a {
+        color: #c4b5fd;
+        text-decoration: none;
+    }
+    .breadcrumb-item.active {
+        color: #94a3c6;
+    }
+    .breadcrumb-item + .breadcrumb-item::before {
+        color: #64748b;
+    }
+</style>
+{% endblock %}
