@@ -335,7 +335,7 @@
         /* Dropdown */
         .dropdown {
             position: relative;
-            z-index: 10000;
+            z-index: 99999 !important;
         }
 
         .dropdown-toggle {
@@ -358,31 +358,33 @@
             right: 0 !important;
             left: auto !important;
             transform: translateY(8px) !important;
-            min-width: 220px;
-            background: linear-gradient(135deg, #0f1225, #0a0d1c) !important;
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(139, 92, 246, 0.4) !important;
+            min-width: 240px;
+            background: rgba(15, 20, 35, 0.98) !important;
+            backdrop-filter: blur(20px) !important;
+            border: 1px solid rgba(139, 92, 246, 0.5) !important;
             border-radius: 20px !important;
-            padding: 8px 0 !important;
+            padding: 10px 0 !important;
             margin: 0 !important;
-            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(139, 92, 246, 0.2) !important;
-            z-index: 99999 !important;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(139, 92, 246, 0.3) !important;
+            z-index: 999999 !important;
             display: none;
             opacity: 0;
             transition: opacity 0.2s ease, transform 0.2s ease;
+            pointer-events: auto !important;
         }
 
         .dropdown-menu.show {
             display: block !important;
             opacity: 1 !important;
             transform: translateY(8px) !important;
+            pointer-events: auto !important;
         }
 
         .dropdown-item {
             display: flex !important;
             align-items: center !important;
-            gap: 12px !important;
-            padding: 10px 20px !important;
+            gap: 14px !important;
+            padding: 12px 20px !important;
             color: #e0e7ff !important;
             font-size: 0.95rem;
             font-weight: 500;
@@ -390,17 +392,19 @@
             background: transparent !important;
             border-radius: 0 !important;
             margin: 0 !important;
+            cursor: pointer !important;
+            pointer-events: auto !important;
         }
 
         .dropdown-item i {
-            width: 20px;
-            font-size: 1rem;
+            width: 22px;
+            font-size: 1.1rem;
             color: #a78bfa;
             transition: all 0.2s;
         }
 
         .dropdown-item:hover {
-            background: linear-gradient(90deg, rgba(109, 40, 217, 0.4), rgba(45, 212, 191, 0.2)) !important;
+            background: linear-gradient(90deg, rgba(109, 40, 217, 0.5), rgba(45, 212, 191, 0.3)) !important;
             color: white !important;
             padding-left: 24px !important;
         }
@@ -415,8 +419,8 @@
         }
 
         .dropdown-item.text-danger:hover {
-            background: linear-gradient(90deg, rgba(244, 114, 182, 0.3), rgba(139, 92, 246, 0.1)) !important;
-            color: #f9a8d4 !important;
+            background: linear-gradient(90deg, rgba(244, 114, 182, 0.4), rgba(139, 92, 246, 0.2)) !important;
+            color: #fda4af !important;
         }
 
         .dropdown-item.text-danger:hover i {
@@ -427,6 +431,7 @@
             height: 1px;
             margin: 8px 0;
             background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.5), transparent);
+            opacity: 0.5;
         }
 
         .dropdown-header {
@@ -436,6 +441,20 @@
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+        }
+
+        /* Убираем перекрытие от модальных окон */
+        .modal {
+            z-index: 1050 !important;
+        }
+
+        .modal-backdrop {
+            z-index: 1040 !important;
+        }
+
+        /* Навигация поверх всего, кроме dropdown */
+        .navbar {
+            z-index: 1000 !important;
         }
 
         /* Футер */

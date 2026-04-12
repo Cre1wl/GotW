@@ -9,7 +9,7 @@
     <div class="row">
         <!-- Левая боковая панель с основной информацией -->
         <div class="col-md-3">
-            <div class="card shadow sticky-top" style="top: 80px;">
+            <div class="card shadow sticky-top" style="top: 80px; z-index: 100;">
                 <div class="card-header" style="background: linear-gradient(135deg, rgba(109, 40, 217, 0.3), rgba(45, 212, 191, 0.15));">
                     <h5 class="mb-0" style="color: #f1f5f9;">
                         <i class="fas fa-info-circle"></i> Основная информация
@@ -291,12 +291,15 @@
 <!-- Модальное окно просмотра изображений -->
 <div class="modal fade" id="imageViewerModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content" style="background: rgba(10, 14, 23, 0.98); backdrop-filter: blur(15px);">
+        <div class="modal-content image-viewer-content">
             <div class="modal-header border-0">
+                <h5 class="modal-title" style="color: #cbd5e6;">Просмотр изображения</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body text-center p-0">
-                <img id="viewerImage" src="" alt="" style="max-height: 80vh; max-width: 100%; border-radius: 12px;">
+            <div class="modal-body">
+                <div class="image-viewer-container">
+                    <img id="viewerImage" src="" alt="">
+                </div>
             </div>
         </div>
     </div>
@@ -305,21 +308,24 @@
 <!-- Модальное окно просмотра галереи -->
 <div class="modal fade" id="galleryViewerModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content" style="background: rgba(10, 14, 23, 0.98); backdrop-filter: blur(15px);">
+        <div class="modal-content gallery-viewer-content">
             <div class="modal-header border-0">
+                <h5 class="modal-title" style="color: #cbd5e6;">Галерея</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body text-center">
-                <img id="galleryViewerImage" src="" alt="" style="max-height: 70vh; max-width: 100%; border-radius: 12px;">
-                <div class="mt-3 d-flex justify-content-center align-items-center gap-3">
-                    <button class="btn btn-outline-primary rounded-pill" id="galleryPrevBtn">
-                        <i class="fas fa-chevron-left"></i> Предыдущее
-                    </button>
-                    <span id="galleryCounter" class="text-secondary"></span>
-                    <button class="btn btn-outline-primary rounded-pill" id="galleryNextBtn">
-                        Следующее <i class="fas fa-chevron-right"></i>
-                    </button>
+            <div class="modal-body">
+                <div class="gallery-viewer-container">
+                    <img id="galleryViewerImage" src="" alt="">
                 </div>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button class="btn btn-outline-primary rounded-pill" id="galleryPrevBtn">
+                    <i class="fas fa-chevron-left"></i> Предыдущее
+                </button>
+                <span id="galleryCounter" class="text-secondary mx-3"></span>
+                <button class="btn btn-outline-primary rounded-pill" id="galleryNextBtn">
+                    Следующее <i class="fas fa-chevron-right"></i>
+                </button>
             </div>
         </div>
     </div>
@@ -330,11 +336,23 @@
     let currentGalleryImages = [];
     let currentGalleryIndex = 0;
     let galleryModal = null;
+    let imageModal = null;
 
     // Функция открытия одиночного изображения
     function openImageViewer(imageUrl) {
         document.getElementById('viewerImage').src = imageUrl;
-        new bootstrap.Modal(document.getElementById('imageViewerModal')).show();
+        if (!imageModal) {
+            imageModal = new bootstrap.Modal(document.getElementById('imageViewerModal'));
+        }
+        imageModal.show();
+
+        // Прокручиваем страницу к модальному окну
+        setTimeout(() => {
+            document.getElementById('imageViewerModal').scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }, 100);
     }
 
     // Функция открытия галереи
@@ -347,6 +365,14 @@
             galleryModal = new bootstrap.Modal(document.getElementById('galleryViewerModal'));
         }
         galleryModal.show();
+
+        // Прокручиваем страницу к модальному окну
+        setTimeout(() => {
+            document.getElementById('galleryViewerModal').scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }, 100);
     }
 
     // Обновление изображения в галерее
@@ -389,6 +415,87 @@
 </script>
 
 <style>
+    /* Исправление для модальных окон - поверх всего */
+    .modal {
+        z-index: 1055 !important;
+    }
+
+    .modal-backdrop {
+        z-index: 1050 !important;
+    }
+
+    /* Убираем перекрытие от sticky-top */
+    .sticky-top {
+        z-index: 100 !important;
+    }
+
+    .card.shadow.sticky-top {
+        z-index: 100 !important;
+    }
+
+    /* Разрешаем прокрутку страницы при открытом модальном окне */
+    body.modal-open {
+        overflow: auto !important;
+        padding-right: 0 !important;
+    }
+
+    /* Стили для модальных окон просмотра изображений */
+    .image-viewer-content,
+    .gallery-viewer-content {
+        background: rgba(10, 14, 23, 0.98);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        border-radius: 24px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .image-viewer-content .modal-body,
+    .gallery-viewer-content .modal-body {
+        padding: 1rem;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 0;
+    }
+
+    .image-viewer-container,
+    .gallery-viewer-container {
+        width: 100%;
+        height: 100%;
+        max-height: calc(90vh - 140px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #viewerImage,
+    #galleryViewerImage {
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .gallery-viewer-content .modal-footer {
+        padding: 1rem 1.5rem 1.5rem;
+        background: transparent;
+        flex-shrink: 0;
+    }
+
+    .image-viewer-content .modal-header,
+    .gallery-viewer-content .modal-header {
+        padding: 1rem 1.5rem;
+        flex-shrink: 0;
+    }
+
+    /* Стили для полей */
     .field-item {
         width: 100%;
     }
@@ -475,21 +582,6 @@
     }
     .rating-display i {
         margin-right: 4px;
-    }
-    .sticky-top {
-        z-index: 1;
-    }
-
-    /* Стили для модальных окон */
-    .modal {
-        z-index: 1055 !important;
-    }
-    .modal-backdrop {
-        z-index: 1050 !important;
-        background-color: rgba(0, 0, 0, 0.8) !important;
-    }
-    .modal-backdrop.show {
-        opacity: 0.9 !important;
     }
 </style>
 {% endblock %}

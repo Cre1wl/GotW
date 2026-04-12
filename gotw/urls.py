@@ -11,6 +11,8 @@ urlpatterns = [
     path('elements/', include('elements.urls')),
     path('galleries/', include('galleries.urls')),
     path('relationships/', include('relationships.urls')),
+
+    path('gsheets/', include('gsheets.urls')),
 ]
 
 if settings.DEBUG:
