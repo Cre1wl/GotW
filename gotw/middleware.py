@@ -15,9 +15,14 @@ class LoginRequiredMiddleware:
         self.exempt_urls = [
             reverse('users:login'),
             reverse('users:register'),
-            '/admin/',  # Админка доступна
-            '/static/',  # Статические файлы
-            '/media/',  # Медиа файлы
+            reverse('users:password_reset'),
+            reverse('users:password_reset_done'),
+            '/users/password-reset/',
+            '/users/password-reset/done/',
+            '/users/reset/',
+            '/admin/',
+            '/static/',
+            '/media/',
         ]
 
     def __call__(self, request):

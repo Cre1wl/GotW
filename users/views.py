@@ -15,7 +15,8 @@ from .models import CustomUser
 from worlds.models import World
 from django.contrib.auth.views import PasswordResetView, PasswordResetDoneView, PasswordResetConfirmView, PasswordResetCompleteView
 from django.urls import reverse_lazy
-
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
 def landing_view(request):
     """Landing page для неавторизованных пользователей"""
@@ -153,31 +154,73 @@ def delete_account_view(request):
 
 
 def password_reset_request_view(request):
-    """Запрос на восстановление пароля"""
+    """Восстановление пароля - email и новый пароль на одной странице"""
     if request.method == 'POST':
-        form = CustomPasswordResetForm(request.POST)
-        if form.is_valid():
-            email = form.cleaned_data['email']
-            # Используем стандартную Django функцию для отправки письма
-            from django.contrib.auth.forms import PasswordResetForm
-            from django.contrib.auth.models import User
+        email = request.POST.get('email')
+        new_password1 = request.POST.get('new_password1')
+        new_password2 = request.POST.get('new_password2')
 
-            reset_form = PasswordResetForm({'email': email})
-            if reset_form.is_valid():
-                reset_form.save(
-                    request=request,
-                    use_https=request.is_secure(),
-                    email_template_name='users/password_reset_email.html',
-                    subject_template_name='users/password_reset_subject.txt'
-                )
-                messages.success(request,
-                                 'Инструкции по восстановлению пароля отправлены на вашу почту (если такой email существует в системе).')
-                return redirect('users:password_reset_done')
+        if not email:
+            messages.error(request, 'Пожалуйста, введите email.')
+            return render(request, 'users/password_reset.html')
+
+        if not new_password1 or not new_password2:
+            messages.error(request, 'Пожалуйста, введите новый пароль.')
+            return render(request, 'users/password_reset.html')
+
+        if new_password1 != new_password2:
+            messages.error(request, 'Пароли не совпадают.')
+            return render(request, 'users/password_reset.html')
+
+        if len(new_password1) < 8:
+            messages.error(request, 'Пароль должен содержать минимум 8 символов.')
+            return render(request, 'users/password_reset.html')
+
+        try:
+            user = User.objects.get(email=email)
+            user.set_password(new_password1)
+            user.save()
+            messages.success(request, 'Пароль успешно изменён! Теперь вы можете войти с новым паролем.')
+            return redirect('users:login')
+        except User.DoesNotExist:
+            messages.error(request, 'Пользователь с таким email не найден.')
+
+    return render(request, 'users/password_reset.html')
+
+
+def password_reset_confirm_view(request, uidb64, token):
+    """Подтверждение и установка нового пароля"""
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    validlink = False
+    form = None
+
+    if user is not None and default_token_generator.check_token(user, token):
+        validlink = True
+        if request.method == 'POST':
+            form = SetPasswordForm(user, request.POST)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Пароль успешно изменён! Теперь вы можете войти с новым паролем.')
+                return redirect('users:password_reset_complete')
+        else:
+            form = SetPasswordForm(user)
     else:
-        form = CustomPasswordResetForm()
+        messages.error(request, 'Ссылка для восстановления пароля недействительна или устарела.')
 
-    return render(request, 'users/password_reset.html', {'form': form})
+    return render(request, 'users/password_reset_confirm.html', {
+        'form': form,
+        'validlink': validlink,
+    })
 
+
+def password_reset_complete_view(request):
+    """Страница успешного изменения пароля"""
+    return render(request, 'users/password_reset_complete.html')
 
 def password_reset_done_view(request):
     """Страница после отправки письма"""
