@@ -9,7 +9,6 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
-import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -44,7 +43,6 @@ INSTALLED_APPS = [
     'relationships',
     'galleries',
     'core',
-    'gsheets'
 ]
 
 MIDDLEWARE = [
@@ -142,6 +140,6 @@ AUTH_USER_MODEL = 'users.CustomUser'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-GSHEETS = {
-    'CLIENT_SECRETS': os.path.join(BASE_DIR, 'D:\3 course\6 sem\ISIS\key\credentials.json')
+GSHEETS_CONFIG = {
+    'CLIENT_SECRETS': r'D:\3 course\6 sem\ISIS\key\credentials.json'
 }
