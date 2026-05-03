@@ -224,6 +224,10 @@ def element_create(request, world_id):
         )
 
         messages.success(request, f'Элемент "{name}" создан!')
+
+        from .crm_integration import create_crm_contact
+        create_crm_contact(element)
+
         return redirect('elements:element_detail', world_id=world.id, element_id=element.id)
 
     return render(request, 'elements/element_create.html', {
